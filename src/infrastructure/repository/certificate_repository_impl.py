@@ -192,6 +192,7 @@ class CertificateRepositoryImpl(CertificateRepository):
             List[Certificate]: Lista de certificados do pedido
         """
         try:
+            # Como a tabela tem chave composta (id + order_id), usamos scan para buscar por order_id
             filter_expression = "order_id = :order_id"
             expression_values = {":order_id": order_id}
             

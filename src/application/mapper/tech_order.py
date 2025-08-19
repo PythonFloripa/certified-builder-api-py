@@ -57,6 +57,7 @@ class CertificateMapper:
     def to_entity(tech_order_response: TechOrdersResponse) -> Certificate:
         return Certificate(            
             order_id=tech_order_response.order_id,
+            order_date=tech_order_response.order_date,
             product_id=tech_order_response.product_id,
             product_name=tech_order_response.product_name,
             certificate_details=tech_order_response.certificate_details,

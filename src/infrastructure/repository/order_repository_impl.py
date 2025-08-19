@@ -35,25 +35,26 @@ class OrderRepositoryImpl(OrderRepository):
             # Adiciona o item no DynamoDB
             self.dynamodb_service.put_item(item, self.table_name)
             
-            logger.info(f"Pedido criado com sucesso: {entity.id}")
+            logger.info(f"Pedido criado com sucesso: {entity.order_id}")
             return entity
             
         except Exception as e:
             logger.error(f"Erro ao criar pedido: {str(e)}")
             raise
     
-    async def get_by_id(self, entity_id: str) -> Optional[Order]:
+    async def get_by_id(self, entity_id: int) -> Optional[Order]:
         """
         Busca um pedido pelo ID.
         
         Args:
-            entity_id: ID do pedido
+            entity_id: ID do pedido (número)
             
         Returns:
             Optional[Order]: Pedido encontrado ou None
         """
         try:
-            key = {"id": entity_id}
+            # Usa order_id como chave primária conforme definido no schema da tabela
+            key = {"order_id": entity_id}
             item = self.dynamodb_service.get_item(key, self.table_name)
             
             if item:
@@ -84,12 +85,12 @@ class OrderRepositoryImpl(OrderRepository):
             logger.error(f"Erro ao buscar todos os pedidos: {str(e)}")
             raise
     
-    async def update(self, entity_id: str, entity: Order) -> Optional[Order]:
+    async def update(self, entity_id: int, entity: Order) -> Optional[Order]:
         """
         Atualiza um pedido existente.
         
         Args:
-            entity_id: ID do pedido
+            entity_id: ID do pedido (número)
             entity: Novos dados do pedido
             
         Returns:
@@ -123,14 +124,12 @@ class OrderRepositoryImpl(OrderRepository):
             expression_names = {f"#{key}": key for key in update_data.keys() if update_data[key] is not None}
             
             # Atualiza o item
-            key = {"id": entity_id}
-            response = self.dynamodb_service.aws.update_item(
-                TableName=self.table_name,
-                Key=key,
-                UpdateExpression=update_expression,
-                ExpressionAttributeValues=expression_values,
-                ExpressionAttributeNames=expression_names,
-                ReturnValues="ALL_NEW"
+            key = {"order_id": entity_id}
+            response = self.dynamodb_service.update_item(
+                key,
+                update_expression,
+                expression_values,
+                self.table_name
             )
             
             if 'Attributes' in response:
@@ -141,18 +140,18 @@ class OrderRepositoryImpl(OrderRepository):
             logger.error(f"Erro ao atualizar pedido {entity_id}: {str(e)}")
             raise
     
-    async def delete(self, entity_id: str) -> bool:
+    async def delete(self, entity_id: int) -> bool:
         """
         Remove um pedido.
         
         Args:
-            entity_id: ID do pedido
+            entity_id: ID do pedido (número)
             
         Returns:
             bool: True se removido com sucesso, False caso contrário
         """
         try:
-            key = {"id": entity_id}
+            key = {"order_id": entity_id}
             self.dynamodb_service.delete_item(key, self.table_name)
             
             logger.info(f"Pedido {entity_id} removido com sucesso")
@@ -162,18 +161,18 @@ class OrderRepositoryImpl(OrderRepository):
             logger.error(f"Erro ao remover pedido {entity_id}: {str(e)}")
             return False
     
-    async def exists(self, entity_id: str) -> bool:
+    async def exists(self, entity_id: int) -> bool:
         """
         Verifica se um pedido existe.
         
         Args:
-            entity_id: ID do pedido
+            entity_id: ID do pedido (número)
             
         Returns:
             bool: True se existe, False caso contrário
         """
         try:
-            key = {"id": entity_id}
+            key = {"order_id": entity_id}
             item = self.dynamodb_service.get_item(key, self.table_name)
             return item is not None
             
