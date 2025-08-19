@@ -228,15 +228,16 @@ class DynamoDBService:
         elif isinstance(data, uuid.UUID):
             # Converte UUID para string no formato JSON do DynamoDB: {'S': 'uuid-string'}
             return {'S': str(data)}
+        elif isinstance(data, bool):
+            # Converte booleanos para o formato JSON do DynamoDB: {'BOOL': valor}
+            # Deve vir antes de int porque bool é subclasse de int
+            return {'BOOL': data}
         elif isinstance(data, int):
             # Converte inteiros para o formato JSON do DynamoDB: {'N': 'valor'}
             return {'N': str(data)}
         elif isinstance(data, float):
             # Converte floats para o formato JSON do DynamoDB: {'N': 'valor'}
             return {'N': str(data)}
-        elif isinstance(data, bool):
-            # Converte booleanos para o formato JSON do DynamoDB: {'BOOL': valor}
-            return {'BOOL': data}
         elif data is None:
             # Converte None para o formato JSON do DynamoDB: {'NULL': True}
             return {'NULL': True}
