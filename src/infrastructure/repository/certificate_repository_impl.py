@@ -42,23 +42,41 @@ class CertificateRepositoryImpl(CertificateRepository):
             logger.error(f"Erro ao criar certificado: {str(e)}")
             raise
     
-    async def get_by_id(self, entity_id: str) -> Optional[Certificate]:
+    async def get_by_id(self, entity_id: str, order_id: int = None) -> Optional[Certificate]:
         """
         Busca um certificado pelo ID.
         
         Args:
-            entity_id: ID do certificado
+            entity_id: ID do certificado (UUID)
+            order_id: ID do pedido (opcional, necessário para chave composta)
             
         Returns:
             Optional[Certificate]: Certificado encontrado ou None
         """
         try:
-            key = {"id": entity_id}
-            item = self.dynamodb_service.get_item(key, self.table_name)
-            
-            if item:
-                return Certificate(**item)
-            return None
+            # Como a tabela tem chave composta (id + order_id), precisamos de ambos
+            if order_id is None:
+                # Se não fornecer order_id, usa scan para buscar apenas por id
+                filter_expression = "id = :id"
+                expression_values = {":id": entity_id}
+                
+                items = self.dynamodb_service.scan_table(
+                    self.table_name, 
+                    filter_expression, 
+                    expression_values
+                )
+                
+                if items:
+                    return Certificate(**items[0])
+                return None
+            else:
+                # Se fornecer order_id, usa get_item com chave composta
+                key = {"id": entity_id, "order_id": order_id}
+                item = self.dynamodb_service.get_item(key, self.table_name)
+                
+                if item:
+                    return Certificate(**item)
+                return None
             
         except Exception as e:
             logger.error(f"Erro ao buscar certificado por ID {entity_id}: {str(e)}")
@@ -110,20 +128,24 @@ class CertificateRepositoryImpl(CertificateRepository):
             # Constrói a expressão de atualização
             update_expression = "SET "
             expression_values = {}
+            expression_names = {}
             
             for key, value in update_data.items():
                 if value is not None:
                     update_expression += f"#{key} = :{key}, "
                     expression_values[f":{key}"] = value
+                    expression_names[f"#{key}"] = key
             
             # Remove a vírgula extra no final
             update_expression = update_expression.rstrip(", ")
             
-            # Adiciona os nomes dos atributos
-            expression_names = {f"#{key}": key for key in update_data.keys() if update_data[key] is not None}
+            # Converte os valores para o formato JSON do DynamoDB
+            expression_values = self.dynamodb_service._convert_to_dynamodb_format(expression_values)
             
             # Atualiza o item
             key = {"id": entity_id}
+            # Converte a chave para o formato JSON do DynamoDB
+            key = self.dynamodb_service._convert_to_dynamodb_format(key)
             response = self.dynamodb_service.aws.update_item(
                 TableName=self.table_name,
                 Key=key,
@@ -141,41 +163,81 @@ class CertificateRepositoryImpl(CertificateRepository):
             logger.error(f"Erro ao atualizar certificado {entity_id}: {str(e)}")
             raise
     
-    async def delete(self, entity_id: str) -> bool:
+    async def delete(self, entity_id: str, order_id: int = None) -> bool:
         """
         Remove um certificado.
         
         Args:
-            entity_id: ID do certificado
+            entity_id: ID do certificado (UUID)
+            order_id: ID do pedido (opcional, necessário para chave composta)
             
         Returns:
             bool: True se removido com sucesso, False caso contrário
         """
         try:
-            key = {"id": entity_id}
-            self.dynamodb_service.delete_item(key, self.table_name)
-            
-            logger.info(f"Certificado {entity_id} removido com sucesso")
-            return True
+            # Como a tabela tem chave composta (id + order_id), precisamos de ambos
+            if order_id is None:
+                # Se não fornecer order_id, usa scan para buscar e depois deletar
+                filter_expression = "id = :id"
+                expression_values = {":id": entity_id}
+                
+                items = self.dynamodb_service.scan_table(
+                    self.table_name, 
+                    filter_expression, 
+                    expression_values
+                )
+                
+                if items:
+                    # Deleta o primeiro item encontrado
+                    item = items[0]
+                    key = {"id": item['id'], "order_id": item['order_id']}
+                    self.dynamodb_service.delete_item(key, self.table_name)
+                    
+                    logger.info(f"Certificado {entity_id} removido com sucesso")
+                    return True
+                return False
+            else:
+                # Se fornecer order_id, usa delete_item com chave composta
+                key = {"id": entity_id, "order_id": order_id}
+                self.dynamodb_service.delete_item(key, self.table_name)
+                
+                logger.info(f"Certificado {entity_id} removido com sucesso")
+                return True
             
         except Exception as e:
             logger.error(f"Erro ao remover certificado {entity_id}: {str(e)}")
             return False
     
-    async def exists(self, entity_id: str) -> bool:
+    async def exists(self, entity_id: str, order_id: int = None) -> bool:
         """
         Verifica se um certificado existe.
         
         Args:
-            entity_id: ID do certificado
+            entity_id: ID do certificado (UUID)
+            order_id: ID do pedido (opcional, necessário para chave composta)
             
         Returns:
             bool: True se existe, False caso contrário
         """
         try:
-            key = {"id": entity_id}
-            item = self.dynamodb_service.get_item(key, self.table_name)
-            return item is not None
+            # Como a tabela tem chave composta (id + order_id), precisamos de ambos
+            if order_id is None:
+                # Se não fornecer order_id, usa scan para buscar apenas por id
+                filter_expression = "id = :id"
+                expression_values = {":id": entity_id}
+                
+                items = self.dynamodb_service.scan_table(
+                    self.table_name, 
+                    filter_expression, 
+                    expression_values
+                )
+                
+                return len(items) > 0
+            else:
+                # Se fornecer order_id, usa get_item com chave composta
+                key = {"id": entity_id, "order_id": order_id}
+                item = self.dynamodb_service.get_item(key, self.table_name)
+                return item is not None
             
         except Exception as e:
             logger.error(f"Erro ao verificar existência do certificado {entity_id}: {str(e)}")
