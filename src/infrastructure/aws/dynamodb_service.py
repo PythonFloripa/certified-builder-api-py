@@ -3,8 +3,10 @@ import json
 from botocore.exceptions import ClientError
 from typing import Dict, List, Optional, Any
 from decimal import Decimal
+import uuid
 
 from src.infrastructure.aws.boto_aws import get_instance_aws, ServiceNameAWS
+from src.infrastructure.config.config import config
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -12,11 +14,12 @@ logger.setLevel(logging.INFO)
 class DynamoDBService:
     """
     Serviço para operações com DynamoDB.
-    Implementa operações CRUD básicas e métodos específicos para cada entidade.
+    Implementa operações CRUD básicas e integra com a configuração da infraestrutura Terraform.
     """
     
     def __init__(self):
         self.aws = get_instance_aws(ServiceNameAWS.DYNAMODB)
+        self.config = config
 
     def put_item(self, item: Dict, table_name: str) -> Dict:
         """
@@ -35,7 +38,7 @@ class DynamoDBService:
             
             logger.info(f"Adicionando item na tabela {table_name}: {item}")
             response = self.aws.put_item(
-                TableName=table_name,
+                TableName=self.build_table_name(table_name),
                 Item=item
             )
             logger.info(f"Item adicionado com sucesso: {response}")
@@ -56,10 +59,13 @@ class DynamoDBService:
             Optional[Dict]: Item encontrado ou None
         """
         try:
+            # Converte a chave para o formato JSON do DynamoDB
+            dynamodb_key = self._convert_to_dynamodb_format(key)
+            
             logger.info(f"Buscando item na tabela {table_name} com chave: {key}")
             response = self.aws.get_item(
-                TableName=table_name,
-                Key=key
+                TableName=self.build_table_name(table_name),
+                Key=dynamodb_key
             )
             
             if 'Item' in response:
@@ -88,13 +94,14 @@ class DynamoDBService:
             Dict: Resposta da operação
         """
         try:
-            # Converte valores para Decimal
+            # Converte a chave e valores para o formato JSON do DynamoDB
+            dynamodb_key = self._convert_to_dynamodb_format(key)
             expression_values = self._convert_to_dynamodb_format(expression_values)
             
             logger.info(f"Atualizando item na tabela {table_name} com chave: {key}")
             response = self.aws.update_item(
-                TableName=table_name,
-                Key=key,
+                TableName=self.build_table_name(table_name),
+                Key=dynamodb_key,
                 UpdateExpression=update_expression,
                 ExpressionAttributeValues=expression_values,
                 ReturnValues="ALL_NEW"
@@ -117,10 +124,13 @@ class DynamoDBService:
             Dict: Resposta da operação
         """
         try:
+            # Converte a chave para o formato JSON do DynamoDB
+            dynamodb_key = self._convert_to_dynamodb_format(key)
+            
             logger.info(f"Removendo item da tabela {table_name} com chave: {key}")
             response = self.aws.delete_item(
-                TableName=table_name,
-                Key=key
+                TableName=self.build_table_name(table_name),
+                Key=dynamodb_key
             )
             logger.info(f"Item removido com sucesso: {response}")
             return response
@@ -141,7 +151,7 @@ class DynamoDBService:
             List[Dict]: Lista de itens encontrados
         """
         try:
-            scan_kwargs = {'TableName': table_name}
+            scan_kwargs = {'TableName': self.build_table_name(table_name)}
             
             if filter_expression and expression_values:
                 expression_values = self._convert_to_dynamodb_format(expression_values)
@@ -180,7 +190,7 @@ class DynamoDBService:
             
             logger.info(f"Consultando tabela {table_name} com expressão: {key_condition_expression}")
             response = self.aws.query(
-                TableName=table_name,
+                TableName=self.build_table_name(table_name),
                 KeyConditionExpression=key_condition_expression,
                 ExpressionAttributeValues=expression_values
             )
@@ -200,7 +210,7 @@ class DynamoDBService:
     def _convert_to_dynamodb_format(self, data: Any) -> Any:
         """
         Converte dados para o formato aceito pelo DynamoDB.
-        Quando usando boto3.client('dynamodb'), strings devem ser convertidas para {'S': 'valor'}.
+        Quando usando boto3.client('dynamodb'), todos os valores devem ser convertidos para o formato JSON do DynamoDB.
         
         Args:
             data: Dados a serem convertidos
@@ -215,14 +225,24 @@ class DynamoDBService:
         elif isinstance(data, str):
             # Converte strings para o formato JSON do DynamoDB: {'S': 'valor'}
             return {'S': data}
-        elif isinstance(data, (int, float)) and not isinstance(data, bool):
-            # Converte números para o formato JSON do DynamoDB: {'N': 'valor'}
+        elif isinstance(data, uuid.UUID):
+            # Converte UUID para string no formato JSON do DynamoDB: {'S': 'uuid-string'}
+            return {'S': str(data)}
+        elif isinstance(data, int):
+            # Converte inteiros para o formato JSON do DynamoDB: {'N': 'valor'}
+            return {'N': str(data)}
+        elif isinstance(data, float):
+            # Converte floats para o formato JSON do DynamoDB: {'N': 'valor'}
             return {'N': str(data)}
         elif isinstance(data, bool):
             # Converte booleanos para o formato JSON do DynamoDB: {'BOOL': valor}
             return {'BOOL': data}
+        elif data is None:
+            # Converte None para o formato JSON do DynamoDB: {'NULL': True}
+            return {'NULL': True}
         else:
-            return data
+            # Para outros tipos, converte para string
+            return {'S': str(data)}
 
     def _convert_from_dynamodb_format(self, data: Any) -> Any:
         """
@@ -262,5 +282,36 @@ class DynamoDBService:
             return data
 
 
-
+    def build_table_name(self, entity: str) -> str:
+        """
+        Constrói o nome da tabela baseado na entidade e configuração da infraestrutura.
+        
+        Args:
+            entity: Nome da entidade (certificates, orders, participants, products)
+            
+        Returns:
+            str: Nome completo da tabela no DynamoDB
+        """
+        return self.config.get_table_name(entity)
+    
+    def get_table_info(self, entity: str) -> Dict[str, str]:
+        """
+        Retorna informações de uma tabela específica.
+        
+        Args:
+            entity: Nome da entidade (certificates, orders, participants, products)
+            
+        Returns:
+            Dict: Informações da tabela (nome e ARN)
+        """
+        return self.config.get_table_info(entity)
+    
+    def get_all_tables_info(self) -> Dict[str, Dict[str, str]]:
+        """
+        Retorna informações de todas as tabelas configuradas.
+        
+        Returns:
+            Dict: Informações das tabelas (nome e ARN)
+        """
+        return self.config.dynamodb_tables
 
