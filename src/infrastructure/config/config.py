@@ -12,7 +12,8 @@ class Config(BaseSettings):
     QUEUE_URL: str
     ENVIRONMENT: str = Field(default="dev")
     PROJECT_NAME: str = Field(default="certified-builder-api-py")
-    
+    URL_SERVICE_TECH: str
+
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"
