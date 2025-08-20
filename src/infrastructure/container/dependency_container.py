@@ -10,6 +10,7 @@ from src.infrastructure.repository.certificate_repository_impl import Certificat
 from src.infrastructure.repository.participant_repository_impl import ParticipantRepositoryImpl
 from src.infrastructure.repository.product_repository_impl import ProductRepositoryImpl
 from src.infrastructure.repository.order_repository_impl import OrderRepositoryImpl
+from src.application.fetch_order_tech_floripa import FetchOrderTechFloripa
 
 class DependencyContainer:
     """
@@ -43,8 +44,10 @@ class DependencyContainer:
         self._services['participant_repository'] = self._create_participant_repository
         self._services['product_repository'] = self._create_product_repository
         self._services['order_repository'] = self._create_order_repository
+        # Registra serviços de aplicação
         self._services['send_for_build_certificate'] = self._create_send_for_build_certificate
         self._services['create_certificate'] = self._create_create_certificate
+        self._services['fetch_order_tech_floripa'] = self._create_fetch_order_tech_floripa
 
     def get(self, service_name: str) -> Any:
         """
@@ -123,6 +126,15 @@ class DependencyContainer:
         """Cria uma instância do CreateCertificate."""
         from src.application.create_certificate import CreateCertificate
         return CreateCertificate()
+
+    def _create_fetch_order_tech_floripa(self):
+        """
+        Cria uma instância do FetchOrderTechFloripa.
+        Usa importação dinâmica para evitar dependências circulares.
+        """
+        from src.application.fetch_order_tech_floripa import FetchOrderTechFloripa
+        return FetchOrderTechFloripa()
+
 
 # Instância global do container
 container = DependencyContainer()
