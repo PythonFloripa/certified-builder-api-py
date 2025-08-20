@@ -9,3 +9,8 @@ wheels/
 # Virtual environments
 .venv
 .env
+
+# Terraform
+terraform/.terraform.lock.hcl
+terraform/.terraform/*
+
