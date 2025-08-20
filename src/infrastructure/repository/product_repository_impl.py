@@ -9,33 +9,17 @@ logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
 class ProductRepositoryImpl(ProductRepository):
-    """
-    Implementação concreta do repositório de Product usando DynamoDB.
-    Segue Clean Architecture implementando a interface do domínio.
-    """
     
     def __init__(self, dynamodb_service: DynamoDBService, table_name: str = "products"):
         self.dynamodb_service = dynamodb_service
         self.table_name = table_name
     
     async def create(self, entity: Product) -> Product:
-        """
-        Cria um novo produto no DynamoDB.
         
-        Args:
-            entity: Produto a ser criado
-            
-        Returns:
-            Product: Produto criado
-        """
         try:
-            # Converte a entidade para dicionário
             item = entity.model_dump()
-            
-            # Adiciona o item no DynamoDB
             self.dynamodb_service.put_item(item, self.table_name)
             
-            logger.info(f"Produto criado com sucesso: {entity.id}")
             return entity
             
         except Exception as e:
@@ -43,15 +27,7 @@ class ProductRepositoryImpl(ProductRepository):
             raise
     
     async def get_by_id(self, entity_id: int) -> Optional[Product]:
-        """
-        Busca um produto pelo ID.
         
-        Args:
-            entity_id: ID do produto (número)
-            
-        Returns:
-            Optional[Product]: Produto encontrado ou None
-        """
         try:
             # Usa product_id como chave primária conforme definido no schema da tabela
             key = {"product_id": entity_id}
@@ -66,12 +42,6 @@ class ProductRepositoryImpl(ProductRepository):
             raise
     
     async def get_all(self) -> List[Product]:
-        """
-        Busca todos os produtos.
-        
-        Returns:
-            List[Product]: Lista de todos os produtos
-        """
         try:
             items = self.dynamodb_service.scan_table(self.table_name)
             products = []
@@ -86,16 +56,7 @@ class ProductRepositoryImpl(ProductRepository):
             raise
     
     async def update(self, entity_id: int, entity: Product) -> Optional[Product]:
-        """
-        Atualiza um produto existente.
         
-        Args:
-            entity_id: ID do produto (número)
-            entity: Novos dados do produto
-            
-        Returns:
-            Optional[Product]: Produto atualizado ou None se não encontrado
-        """
         try:
             # Verifica se o produto existe
             if not await self.exists(entity_id):
@@ -141,36 +102,18 @@ class ProductRepositoryImpl(ProductRepository):
             raise
     
     async def delete(self, entity_id: int) -> bool:
-        """
-        Remove um produto.
         
-        Args:
-            entity_id: ID do produto (número)
-            
-        Returns:
-            bool: True se removido com sucesso, False caso contrário
-        """
         try:
             key = {"product_id": entity_id}
             self.dynamodb_service.delete_item(key, self.table_name)
-            
-            logger.info(f"Produto {entity_id} removido com sucesso")
+        
             return True
             
         except Exception as e:
             logger.error(f"Erro ao remover produto {entity_id}: {str(e)}")
             return False
     
-    async def exists(self, entity_id: int) -> bool:
-        """
-        Verifica se um produto existe.
-        
-        Args:
-            entity_id: ID do produto (número)
-            
-        Returns:
-            bool: True se existe, False caso contrário
-        """
+    async def exists(self, entity_id: int) -> bool:        
         try:
             key = {"product_id": entity_id}
             item = self.dynamodb_service.get_item(key, self.table_name)
@@ -181,15 +124,7 @@ class ProductRepositoryImpl(ProductRepository):
             return False
     
     async def get_by_product_id(self, product_id: int) -> Optional[Product]:
-        """
-        Busca produto por product_id.
         
-        Args:
-            product_id: ID numérico do produto
-            
-        Returns:
-            Optional[Product]: Produto encontrado ou None
-        """
         try:
             filter_expression = "productId = :product_id"
             expression_values = {":product_id": product_id}
@@ -209,15 +144,7 @@ class ProductRepositoryImpl(ProductRepository):
             raise
     
     async def get_by_name(self, product_name: str) -> List[Product]:
-        """
-        Busca produtos por nome.
         
-        Args:
-            product_name: Nome do produto
-            
-        Returns:
-            List[Product]: Lista de produtos com o nome especificado
-        """
         try:
             filter_expression = "productName = :product_name"
             expression_values = {":product_name": product_name}
@@ -239,12 +166,7 @@ class ProductRepositoryImpl(ProductRepository):
             raise
     
     async def get_products_with_logo(self) -> List[Product]:
-        """
-        Busca produtos que possuem logo.
         
-        Returns:
-            List[Product]: Lista de produtos com logo
-        """
         try:
             filter_expression = "attribute_exists(certificateLogo)"
             
@@ -264,12 +186,7 @@ class ProductRepositoryImpl(ProductRepository):
             raise
     
     async def get_products_with_background(self) -> List[Product]:
-        """
-        Busca produtos que possuem background.
         
-        Returns:
-            List[Product]: Lista de produtos com background
-        """
         try:
             filter_expression = "attribute_exists(certificateBackground)"
             

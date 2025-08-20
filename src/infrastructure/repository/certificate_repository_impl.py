@@ -8,31 +8,15 @@ from src.infrastructure.aws.dynamodb_service import DynamoDBService
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
-class CertificateRepositoryImpl(CertificateRepository):
-    """
-    Implementação concreta do repositório de Certificate usando DynamoDB.
-    Segue Clean Architecture implementando a interface do domínio.
-    """
-    
+class CertificateRepositoryImpl(CertificateRepository):    
     def __init__(self, dynamodb_service: DynamoDBService, table_name: str = "certificates"):
         self.dynamodb_service = dynamodb_service
         self.table_name = table_name
     
     async def create(self, entity: Certificate) -> Certificate:
-        """
-        Cria um novo certificado no DynamoDB.
         
-        Args:
-            entity: Certificado a ser criado
-            
-        Returns:
-            Certificate: Certificado criado
-        """
         try:
-            # Converte a entidade para dicionário
             item = entity.model_dump()
-            
-            # Adiciona o item no DynamoDB
             self.dynamodb_service.put_item(item, self.table_name)
             
             logger.info(f"Certificado criado com sucesso: {entity.id}")
@@ -43,16 +27,7 @@ class CertificateRepositoryImpl(CertificateRepository):
             raise
     
     async def get_by_id(self, entity_id: str, order_id: int = None) -> Optional[Certificate]:
-        """
-        Busca um certificado pelo ID.
         
-        Args:
-            entity_id: ID do certificado (UUID)
-            order_id: ID do pedido (opcional, necessário para chave composta)
-            
-        Returns:
-            Optional[Certificate]: Certificado encontrado ou None
-        """
         try:
             # Como a tabela tem chave composta (id + order_id), precisamos de ambos
             if order_id is None:
@@ -83,12 +58,7 @@ class CertificateRepositoryImpl(CertificateRepository):
             raise
     
     async def get_all(self) -> List[Certificate]:
-        """
-        Busca todos os certificados.
         
-        Returns:
-            List[Certificate]: Lista de todos os certificados
-        """
         try:
             items = self.dynamodb_service.scan_table(self.table_name)
             certificates = []
@@ -103,16 +73,7 @@ class CertificateRepositoryImpl(CertificateRepository):
             raise
     
     async def update(self, entity_id: str, entity: Certificate) -> Optional[Certificate]:
-        """
-        Atualiza um certificado existente.
         
-        Args:
-            entity_id: ID do certificado
-            entity: Novos dados do certificado
-            
-        Returns:
-            Optional[Certificate]: Certificado atualizado ou None se não encontrado
-        """
         try:
             # Verifica se o certificado existe
             if not await self.exists(entity_id):
@@ -164,16 +125,7 @@ class CertificateRepositoryImpl(CertificateRepository):
             raise
     
     async def delete(self, entity_id: str, order_id: int = None) -> bool:
-        """
-        Remove um certificado.
         
-        Args:
-            entity_id: ID do certificado (UUID)
-            order_id: ID do pedido (opcional, necessário para chave composta)
-            
-        Returns:
-            bool: True se removido com sucesso, False caso contrário
-        """
         try:
             # Como a tabela tem chave composta (id + order_id), precisamos de ambos
             if order_id is None:
@@ -209,16 +161,6 @@ class CertificateRepositoryImpl(CertificateRepository):
             return False
     
     async def exists(self, entity_id: str, order_id: int = None) -> bool:
-        """
-        Verifica se um certificado existe.
-        
-        Args:
-            entity_id: ID do certificado (UUID)
-            order_id: ID do pedido (opcional, necessário para chave composta)
-            
-        Returns:
-            bool: True se existe, False caso contrário
-        """
         try:
             # Como a tabela tem chave composta (id + order_id), precisamos de ambos
             if order_id is None:
@@ -244,15 +186,7 @@ class CertificateRepositoryImpl(CertificateRepository):
             return False
     
     async def get_by_order_id(self, order_id: int) -> List[Certificate]:
-        """
-        Busca certificados por order_id.
         
-        Args:
-            order_id: ID do pedido
-            
-        Returns:
-            List[Certificate]: Lista de certificados do pedido
-        """
         try:
             # Como a tabela tem chave composta (id + order_id), usamos scan para buscar por order_id
             filter_expression = "order_id = :order_id"
@@ -275,15 +209,7 @@ class CertificateRepositoryImpl(CertificateRepository):
             raise
     
     async def get_by_participant_email(self, email: str) -> List[Certificate]:
-        """
-        Busca certificados por email do participante.
         
-        Args:
-            email: Email do participante
-            
-        Returns:
-            List[Certificate]: Lista de certificados do participante
-        """
         try:
             filter_expression = "participant_email = :email"
             expression_values = {":email": email}
@@ -305,15 +231,7 @@ class CertificateRepositoryImpl(CertificateRepository):
             raise
     
     async def get_by_product_id(self, product_id: int) -> List[Certificate]:
-        """
-        Busca certificados por product_id.
         
-        Args:
-            product_id: ID do produto
-            
-        Returns:
-            List[Certificate]: Lista de certificados do produto
-        """
         try:
             filter_expression = "product_id = :product_id"
             expression_values = {":product_id": product_id}
@@ -335,12 +253,7 @@ class CertificateRepositoryImpl(CertificateRepository):
             raise
     
     async def get_successful_certificates(self) -> List[Certificate]:
-        """
-        Busca apenas certificados com sucesso=True.
         
-        Returns:
-            List[Certificate]: Lista de certificados bem-sucedidos
-        """
         try:
             filter_expression = "success = :success"
             expression_values = {":success": True}
