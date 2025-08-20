@@ -11,7 +11,6 @@ from src.infrastructure.repository.participant_repository_impl import Participan
 from src.infrastructure.repository.product_repository_impl import ProductRepositoryImpl
 from src.infrastructure.repository.order_repository_impl import OrderRepositoryImpl
 
-
 class DependencyContainer:
     """
     Container de dependências que centraliza a criação e injeção de dependências.
@@ -44,7 +43,9 @@ class DependencyContainer:
         self._services['participant_repository'] = self._create_participant_repository
         self._services['product_repository'] = self._create_product_repository
         self._services['order_repository'] = self._create_order_repository
-    
+        self._services['send_for_build_certificate'] = self._create_send_for_build_certificate
+        self._services['create_certificate'] = self._create_create_certificate
+
     def get(self, service_name: str) -> Any:
         """
         Obtém uma instância do serviço solicitado.
@@ -108,6 +109,20 @@ class DependencyContainer:
         dynamodb_service = self.get('dynamodb_service')
         return OrderRepositoryImpl(dynamodb_service, "orders")
     
+    def _create_send_for_build_certificate(self):
+        """
+        Cria uma instância do SendForBuildCertificate.
+        Usa importação dinâmica para evitar importação circular.
+        """
+        from src.application.send_for_build_certificate import SendForBuildCertificate
+        # Injeta o SQSService via construtor para evitar dependência circular
+        sqs_service = self.get('sqs_service')
+        return SendForBuildCertificate(sqs_service)
+
+    def _create_create_certificate(self):
+        """Cria uma instância do CreateCertificate."""
+        from src.application.create_certificate import CreateCertificate
+        return CreateCertificate()
 
 # Instância global do container
 container = DependencyContainer()
