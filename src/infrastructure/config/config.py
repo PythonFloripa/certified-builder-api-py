@@ -13,7 +13,7 @@ class Config(BaseSettings):
     ENVIRONMENT: str = Field(default="dev")
     PROJECT_NAME: str = Field(default="certified-builder-api-py")
     URL_SERVICE_TECH: str
-
+    PREFIX_API_VERSION: str = Field(default="/api/v1")
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"
