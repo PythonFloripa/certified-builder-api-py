@@ -14,7 +14,7 @@ class ProductRepositoryImpl(ProductRepository):
         self.dynamodb_service = dynamodb_service
         self.table_name = table_name
     
-    async def create(self, entity: Product) -> Product:
+    def create(self, entity: Product) -> Product:
         
         try:
             item = entity.model_dump()
@@ -26,7 +26,7 @@ class ProductRepositoryImpl(ProductRepository):
             logger.error(f"Erro ao criar produto: {str(e)}")
             raise
     
-    async def get_by_id(self, entity_id: int) -> Optional[Product]:
+    def get_by_id(self, entity_id: int) -> Optional[Product]:
         
         try:
             # Usa product_id como chave primária conforme definido no schema da tabela
@@ -41,7 +41,7 @@ class ProductRepositoryImpl(ProductRepository):
             logger.error(f"Erro ao buscar produto por ID {entity_id}: {str(e)}")
             raise
     
-    async def get_all(self) -> List[Product]:
+    def get_all(self) -> List[Product]:
         try:
             items = self.dynamodb_service.scan_table(self.table_name)
             products = []
@@ -55,11 +55,11 @@ class ProductRepositoryImpl(ProductRepository):
             logger.error(f"Erro ao buscar todos os produtos: {str(e)}")
             raise
     
-    async def update(self, entity_id: int, entity: Product) -> Optional[Product]:
+    def update(self, entity_id: int, entity: Product) -> Optional[Product]:
         
         try:
             # Verifica se o produto existe
-            if not await self.exists(entity_id):
+            if not self.exists(entity_id):
                 return None
             
             # Converte a entidade para dicionário
@@ -101,7 +101,7 @@ class ProductRepositoryImpl(ProductRepository):
             logger.error(f"Erro ao atualizar produto {entity_id}: {str(e)}")
             raise
     
-    async def delete(self, entity_id: int) -> bool:
+    def delete(self, entity_id: int) -> bool:
         
         try:
             key = {"product_id": entity_id}
@@ -113,7 +113,7 @@ class ProductRepositoryImpl(ProductRepository):
             logger.error(f"Erro ao remover produto {entity_id}: {str(e)}")
             return False
     
-    async def exists(self, entity_id: int) -> bool:        
+    def exists(self, entity_id: int) -> bool:        
         try:
             key = {"product_id": entity_id}
             item = self.dynamodb_service.get_item(key, self.table_name)
@@ -123,7 +123,7 @@ class ProductRepositoryImpl(ProductRepository):
             logger.error(f"Erro ao verificar existência do produto {entity_id}: {str(e)}")
             return False
     
-    async def get_by_product_id(self, product_id: int) -> Optional[Product]:
+    def get_by_product_id(self, product_id: int) -> Optional[Product]:
         
         try:
             filter_expression = "productId = :product_id"
@@ -143,7 +143,7 @@ class ProductRepositoryImpl(ProductRepository):
             logger.error(f"Erro ao buscar produto por product_id {product_id}: {str(e)}")
             raise
     
-    async def get_by_name(self, product_name: str) -> List[Product]:
+    def get_by_name(self, product_name: str) -> List[Product]:
         
         try:
             filter_expression = "productName = :product_name"
@@ -165,7 +165,7 @@ class ProductRepositoryImpl(ProductRepository):
             logger.error(f"Erro ao buscar produtos por nome {product_name}: {str(e)}")
             raise
     
-    async def get_products_with_logo(self) -> List[Product]:
+    def get_products_with_logo(self) -> List[Product]:
         
         try:
             filter_expression = "attribute_exists(certificateLogo)"
@@ -185,7 +185,7 @@ class ProductRepositoryImpl(ProductRepository):
             logger.error(f"Erro ao buscar produtos com logo: {str(e)}")
             raise
     
-    async def get_products_with_background(self) -> List[Product]:
+    def get_products_with_background(self) -> List[Product]:
         
         try:
             filter_expression = "attribute_exists(certificateBackground)"

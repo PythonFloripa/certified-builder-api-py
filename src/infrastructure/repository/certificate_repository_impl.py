@@ -13,7 +13,7 @@ class CertificateRepositoryImpl(CertificateRepository):
         self.dynamodb_service = dynamodb_service
         self.table_name = table_name
     
-    async def create(self, entity: Certificate) -> Certificate:
+    def create(self, entity: Certificate) -> Certificate:
         
         try:
             item = entity.model_dump()
@@ -26,7 +26,7 @@ class CertificateRepositoryImpl(CertificateRepository):
             logger.error(f"Erro ao criar certificado: {str(e)}")
             raise
     
-    async def get_by_id(self, entity_id: str, order_id: int = None) -> Optional[Certificate]:
+    def get_by_id(self, entity_id: str, order_id: int = None) -> Optional[Certificate]:
         
         try:
             # Como a tabela tem chave composta (id + order_id), precisamos de ambos
@@ -57,7 +57,7 @@ class CertificateRepositoryImpl(CertificateRepository):
             logger.error(f"Erro ao buscar certificado por ID {entity_id}: {str(e)}")
             raise
     
-    async def get_all(self) -> List[Certificate]:
+    def get_all(self) -> List[Certificate]:
         
         try:
             items = self.dynamodb_service.scan_table(self.table_name)
@@ -72,11 +72,11 @@ class CertificateRepositoryImpl(CertificateRepository):
             logger.error(f"Erro ao buscar todos os certificados: {str(e)}")
             raise
     
-    async def update(self, entity_id: str, entity: Certificate) -> Optional[Certificate]:
+    def update(self, entity_id: str, entity: Certificate) -> Optional[Certificate]:
         
         try:
             # Verifica se o certificado existe
-            if not await self.exists(entity_id):
+            if not self.exists(entity_id):
                 return None
             
             # Converte a entidade para dicionário
@@ -124,7 +124,7 @@ class CertificateRepositoryImpl(CertificateRepository):
             logger.error(f"Erro ao atualizar certificado {entity_id}: {str(e)}")
             raise
     
-    async def delete(self, entity_id: str, order_id: int = None) -> bool:
+    def delete(self, entity_id: str, order_id: int = None) -> bool:
         
         try:
             # Como a tabela tem chave composta (id + order_id), precisamos de ambos
@@ -160,7 +160,7 @@ class CertificateRepositoryImpl(CertificateRepository):
             logger.error(f"Erro ao remover certificado {entity_id}: {str(e)}")
             return False
     
-    async def exists(self, entity_id: str, order_id: int = None) -> bool:
+    def exists(self, entity_id: str, order_id: int = None) -> bool:
         try:
             # Como a tabela tem chave composta (id + order_id), precisamos de ambos
             if order_id is None:
@@ -185,7 +185,7 @@ class CertificateRepositoryImpl(CertificateRepository):
             logger.error(f"Erro ao verificar existência do certificado {entity_id}: {str(e)}")
             return False
     
-    async def get_by_order_id(self, order_id: int) -> List[Certificate]:
+    def get_by_order_id(self, order_id: int) -> List[Certificate]:
         
         try:
             # Como a tabela tem chave composta (id + order_id), usamos scan para buscar por order_id
@@ -208,7 +208,7 @@ class CertificateRepositoryImpl(CertificateRepository):
             logger.error(f"Erro ao buscar certificados por order_id {order_id}: {str(e)}")
             raise
     
-    async def get_by_participant_email(self, email: str) -> List[Certificate]:
+    def get_by_participant_email(self, email: str) -> List[Certificate]:
         
         try:
             filter_expression = "participant_email = :email"
@@ -230,7 +230,7 @@ class CertificateRepositoryImpl(CertificateRepository):
             logger.error(f"Erro ao buscar certificados por email {email}: {str(e)}")
             raise
     
-    async def get_by_product_id(self, product_id: int) -> List[Certificate]:
+    def get_by_product_id(self, product_id: int) -> List[Certificate]:
         
         try:
             filter_expression = "product_id = :product_id"
@@ -252,7 +252,7 @@ class CertificateRepositoryImpl(CertificateRepository):
             logger.error(f"Erro ao buscar certificados por product_id {product_id}: {str(e)}")
             raise
     
-    async def get_successful_certificates(self) -> List[Certificate]:
+    def get_successful_certificates(self) -> List[Certificate]:
         
         try:
             filter_expression = "success = :success"

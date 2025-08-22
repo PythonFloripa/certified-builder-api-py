@@ -26,7 +26,7 @@ class CreateCertificate:
         self.order_repository:OrderRepository = container.get('order_repository')
 
 
-    async def execute(self, tech_orders: List[TechOrdersResponse]) -> BuildOrderResponse:
+    def execute(self, tech_orders: List[TechOrdersResponse]) -> BuildOrderResponse:
         logger.info(f"Starting certificate creation process for tech orders size: {len(tech_orders)}.")
         
         if len(tech_orders) == 0:
@@ -43,7 +43,7 @@ class CreateCertificate:
         processed_orders = []
         for order in valid_orders:
             try:
-                processed_order = await self.__register_certificate(order)
+                processed_order = self.__register_certificate(order)
                 if processed_order:
                     processed_orders.append(processed_order)
             except Exception as e:
@@ -52,13 +52,21 @@ class CreateCertificate:
 
         logger.info(f"Successfully processed {len(processed_orders)} certificates.")
 
+        return self.__build_response(processed_orders, invalid_orders, processed_orders)
+
+    def __build_response(self, processed_orders: List[TechOrdersResponse], 
+                         invalid_orders: List[TechOrdersResponse], 
+                         valid_orders: List[TechOrdersResponse]) -> BuildOrderResponse:
+        
+        logger.info(f"Building response for {len(processed_orders)} processed orders, {len(invalid_orders)} invalid orders and {len(valid_orders)} valid orders.")
+        
         return BuildOrderResponse(
             certificate_quantity=len(processed_orders),
-            existing_orders=invalid_orders,
-            new_orders=processed_orders
+            existing_orders=[order.order_id for order in invalid_orders],
+            new_orders=[order.order_id for order in valid_orders]
         )
 
-    def __validate_tech_orders_with_time_checkin(self, tech_orders: List[TechOrdersResponse]) -> tuple[List[TechOrdersResponse], List[TechOrdersResponse]]:
+    def __validate_tech_orders_with_time_checkin(self, tech_orders: List[TechOrdersResponse]) -> tuple[List[TechOrdersResponse], List[int]]:
         logger.info("Processing tech orders to create certificates.")
 
         valid_orders = []
@@ -78,7 +86,7 @@ class CreateCertificate:
         
         return valid_orders, invalid_orders
 
-    async def __register_certificate(self, order: TechOrdersResponse) -> Optional[TechOrdersResponse]:
+    def __register_certificate(self, order: TechOrdersResponse) -> Optional[TechOrdersResponse]:
         
         
         logger.info(f"Registering certificate for order ID: {order.order_id} and product ID: {order.product_id}.")
@@ -90,34 +98,34 @@ class CreateCertificate:
             participant_entity = TechParticipantMapper.to_entity(order)            
 
             # Verifica se o participante já existe
-            participant_exist = await self.participant_repository.get_by_email(order.email)
+            participant_exist = self.participant_repository.get_by_email(order.email)
             if not participant_exist:
                 logger.info(f"Participant not exists for order {order.order_id}, creating new participant.")
-                await self.participant_repository.create(participant_entity)
+                self.participant_repository.create(participant_entity)
             else:
                 logger.info(f"Participant already exists for order {order.order_id}, skipping participant.")
 
 
-            product_exist = await self.product_repository.get_by_id(order.product_id)
+            product_exist = self.product_repository.get_by_id(order.product_id)
             if not product_exist:
                 logger.info(f"Product not exists for order {order.order_id}, creating new product.")
-                await self.product_repository.create(product_entity)
+                self.product_repository.create(product_entity)
             else:
                 logger.info(f"Product already exists for order {order.order_id}, skipping product.")
 
 
-            order_exist = await self.order_repository.get_by_id(order.order_id)
+            order_exist = self.order_repository.get_by_id(order.order_id)
             if not order_exist:
                 logger.info(f"Order not exists for order {order.order_id}, creating new order.")
-                await self.order_repository.create(order_entity)
+                self.order_repository.create(order_entity)
             else:
                 logger.info(f"Order already exists for order {order.order_id}, skipping order.")
 
             certificate_entity = CertificateMapper.to_entity(order)
-            certificate_exist = await self.certificate_repository.get_by_order_id(certificate_entity.order_id)
+            certificate_exist = self.certificate_repository.get_by_order_id(certificate_entity.order_id)
             if not certificate_exist or len(certificate_exist) == 0:
                 logger.info(f"Certificate not exists for order {order.order_id}, creating new certificate.")
-                await self.certificate_repository.create(certificate_entity)
+                self.certificate_repository.create(certificate_entity)
             else:
                 logger.info(f"Certificate already exists for order {order.order_id}, skipping certificate creation.")
                 # Não atualiza o certificado existente, apenas pula

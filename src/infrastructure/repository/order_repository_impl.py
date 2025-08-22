@@ -13,7 +13,7 @@ class OrderRepositoryImpl(OrderRepository):
         self.dynamodb_service = dynamodb_service
         self.table_name = table_name
     
-    async def create(self, entity: Order) -> Order:
+    def create(self, entity: Order) -> Order:
 
         try:
             item = entity.model_dump()
@@ -24,7 +24,7 @@ class OrderRepositoryImpl(OrderRepository):
             logger.error(f"Erro ao criar pedido: {str(e)}")
             raise
     
-    async def get_by_id(self, entity_id: int) -> Optional[Order]:
+    def get_by_id(self, entity_id: int) -> Optional[Order]:
         
         try:
             key = {"order_id": entity_id}
@@ -37,7 +37,7 @@ class OrderRepositoryImpl(OrderRepository):
             logger.error(f"Erro ao buscar pedido por ID {entity_id}: {str(e)}")
             raise
     
-    async def get_all(self) -> List[Order]:
+    def get_all(self) -> List[Order]:
         
         try:
             items = self.dynamodb_service.scan_table(self.table_name)
@@ -52,10 +52,10 @@ class OrderRepositoryImpl(OrderRepository):
             logger.error(f"Erro ao buscar todos os pedidos: {str(e)}")
             raise
     
-    async def update(self, entity_id: int, entity: Order) -> Optional[Order]:
+    def update(self, entity_id: int, entity: Order) -> Optional[Order]:
         
         try:
-            if not await self.exists(entity_id):
+            if not self.exists(entity_id):
                 return None
             
             update_data = entity.model_dump()
@@ -95,7 +95,7 @@ class OrderRepositoryImpl(OrderRepository):
             logger.error(f"Erro ao atualizar pedido {entity_id}: {str(e)}")
             raise
     
-    async def delete(self, entity_id: int) -> bool:
+    def delete(self, entity_id: int) -> bool:
         
         try:
             key = {"order_id": entity_id}
@@ -106,7 +106,7 @@ class OrderRepositoryImpl(OrderRepository):
             logger.error(f"Erro ao remover pedido {entity_id}: {str(e)}")
             return False
     
-    async def exists(self, entity_id: int) -> bool:
+    def exists(self, entity_id: int) -> bool:
         
         try:
             key = {"order_id": entity_id}
@@ -117,7 +117,7 @@ class OrderRepositoryImpl(OrderRepository):
             logger.error(f"Erro ao verificar existência do pedido {entity_id}: {str(e)}")
             return False
     
-    async def get_by_order_id(self, order_id: int) -> Optional[Order]:
+    def get_by_order_id(self, order_id: int) -> Optional[Order]:
         
         try:
             filter_expression = "orderId = :order_id"
@@ -137,7 +137,7 @@ class OrderRepositoryImpl(OrderRepository):
             logger.error(f"Erro ao buscar pedido por order_id {order_id}: {str(e)}")
             raise
     
-    async def get_by_participant_email(self, email: str) -> List[Order]:
+    def get_by_participant_email(self, email: str) -> List[Order]:
         
         try:
             filter_expression = "participantEmail = :email"
@@ -159,7 +159,7 @@ class OrderRepositoryImpl(OrderRepository):
             logger.error(f"Erro ao buscar pedidos por email {email}: {str(e)}")
             raise
     
-    async def get_by_product_id(self, product_id: int) -> List[Order]:
+    def get_by_product_id(self, product_id: int) -> List[Order]:
         
         try:
             filter_expression = "productId = :product_id"
@@ -181,7 +181,7 @@ class OrderRepositoryImpl(OrderRepository):
             logger.error(f"Erro ao buscar pedidos por product_id {product_id}: {str(e)}")
             raise
     
-    async def get_orders_by_date_range(self, start_date: str, end_date: str) -> List[Order]:
+    def get_orders_by_date_range(self, start_date: str, end_date: str) -> List[Order]:
         
         try:
             filter_expression = "orderDate BETWEEN :start_date AND :end_date"

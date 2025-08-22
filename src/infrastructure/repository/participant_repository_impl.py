@@ -13,7 +13,7 @@ class ParticipantRepositoryImpl(ParticipantRepository):
         self.dynamodb_service = dynamodb_service
         self.table_name = table_name
     
-    async def create(self, entity: Participant) -> Participant:        
+    def create(self, entity: Participant) -> Participant:        
         try:
             item = entity.model_dump()
             self.dynamodb_service.put_item(item, self.table_name)
@@ -22,7 +22,7 @@ class ParticipantRepositoryImpl(ParticipantRepository):
             logger.error(f"Erro ao criar participante: {str(e)}")
             raise
     
-    async def get_by_id(self, entity_id: str) -> Optional[Participant]:        
+    def get_by_id(self, entity_id: str) -> Optional[Participant]:        
         try:
             key = {"id": entity_id}
             item = self.dynamodb_service.get_item(key, self.table_name)
@@ -35,7 +35,7 @@ class ParticipantRepositoryImpl(ParticipantRepository):
             logger.error(f"Erro ao buscar participante por ID {entity_id}: {str(e)}")
             raise
     
-    async def get_all(self) -> List[Participant]:        
+    def get_all(self) -> List[Participant]:        
         try:
             items = self.dynamodb_service.scan_table(self.table_name)
             participants = []
@@ -49,10 +49,10 @@ class ParticipantRepositoryImpl(ParticipantRepository):
             logger.error(f"Erro ao buscar todos os participantes: {str(e)}")
             raise
     
-    async def update(self, entity_id: str, entity: Participant) -> Optional[Participant]:        
+    def update(self, entity_id: str, entity: Participant) -> Optional[Participant]:        
         try:
             # Verifica se o participante existe
-            if not await self.exists(entity_id):
+            if not self.exists(entity_id):
                 return None
             
             # Converte a entidade para dicionário
@@ -96,7 +96,7 @@ class ParticipantRepositoryImpl(ParticipantRepository):
             logger.error(f"Erro ao atualizar participante {entity_id}: {str(e)}")
             raise
     
-    async def delete(self, entity_id: str) -> bool:        
+    def delete(self, entity_id: str) -> bool:        
         try:
             key = {"id": entity_id}
             self.dynamodb_service.delete_item(key, self.table_name)            
@@ -106,7 +106,7 @@ class ParticipantRepositoryImpl(ParticipantRepository):
             logger.error(f"Erro ao remover participante {entity_id}: {str(e)}")
             return False
     
-    async def exists(self, entity_id: str) -> bool:        
+    def exists(self, entity_id: str) -> bool:        
         try:
             key = {"id": entity_id}
             item = self.dynamodb_service.get_item(key, self.table_name)
@@ -116,7 +116,7 @@ class ParticipantRepositoryImpl(ParticipantRepository):
             logger.error(f"Erro ao verificar existência do participante {entity_id}: {str(e)}")
             return False
     
-    async def get_by_email(self, email: str) -> Optional[Participant]:        
+    def get_by_email(self, email: str) -> Optional[Participant]:        
         try:
             filter_expression = "email = :email"            
             expression_values = {":email": email}
@@ -135,7 +135,7 @@ class ParticipantRepositoryImpl(ParticipantRepository):
             logger.error(f"Erro ao buscar participante por email {email}: {str(e)}")
             raise
     
-    async def get_by_cpf(self, cpf: str) -> Optional[Participant]:        
+    def get_by_cpf(self, cpf: str) -> Optional[Participant]:        
         try:
             filter_expression = "cpf = :cpf"
             expression_values = {":cpf": cpf}
@@ -154,7 +154,7 @@ class ParticipantRepositoryImpl(ParticipantRepository):
             logger.error(f"Erro ao buscar participante por CPF {cpf}: {str(e)}")
             raise
     
-    async def get_by_city(self, city: str) -> List[Participant]:        
+    def get_by_city(self, city: str) -> List[Participant]:        
         try:
             filter_expression = "city = :city"
             expression_values = {":city": city}
@@ -175,20 +175,20 @@ class ParticipantRepositoryImpl(ParticipantRepository):
             logger.error(f"Erro ao buscar participantes por cidade {city}: {str(e)}")
             raise
     
-    async def email_exists(self, email: str) -> bool:
+    def email_exists(self, email: str) -> bool:
         
         try:
-            participant = await self.get_by_email(email)
+            participant = self.get_by_email(email)
             return participant is not None
             
         except Exception as e:
             logger.error(f"Erro ao verificar existência do email {email}: {str(e)}")
             return False
     
-    async def cpf_exists(self, cpf: str) -> bool:
+    def cpf_exists(self, cpf: str) -> bool:
         
         try:
-            participant = await self.get_by_cpf(cpf)
+            participant = self.get_by_cpf(cpf)
             return participant is not None
             
         except Exception as e:

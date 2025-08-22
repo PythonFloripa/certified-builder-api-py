@@ -10,21 +10,21 @@ class CertificateRepository(BaseRepository[Certificate]):
     """
     
     @abstractmethod
-    async def get_by_order_id(self, order_id: int) -> List[Certificate]:
+    def get_by_order_id(self, order_id: int) -> List[Certificate]:
         """Busca certificados por order_id"""
         pass
     
     @abstractmethod
-    async def get_by_participant_email(self, email: str) -> List[Certificate]:
+    def get_by_participant_email(self, email: str) -> List[Certificate]:
         """Busca certificados por email do participante"""
         pass
     
     @abstractmethod
-    async def get_by_product_id(self, product_id: int) -> List[Certificate]:
+    def get_by_product_id(self, product_id: int) -> List[Certificate]:
         """Busca certificados por product_id"""
         pass
     
     @abstractmethod
-    async def get_successful_certificates(self) -> List[Certificate]:
+    def get_successful_certificates(self) -> List[Certificate]:
         """Busca apenas certificados com sucesso=True"""
         pass

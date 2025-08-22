@@ -10,21 +10,21 @@ class OrderRepository(BaseRepository[Order]):
     """
     
     @abstractmethod
-    async def get_by_order_id(self, order_id: int) -> Optional[Order]:
+    def get_by_order_id(self, order_id: int) -> Optional[Order]:
         """Busca pedido por order_id"""
         pass
     
     @abstractmethod
-    async def get_by_participant_email(self, email: str) -> List[Order]:
+    def get_by_participant_email(self, email: str) -> List[Order]:
         """Busca pedidos por email do participante"""
         pass
     
     @abstractmethod
-    async def get_by_product_id(self, product_id: int) -> List[Order]:
+    def get_by_product_id(self, product_id: int) -> List[Order]:
         """Busca pedidos por product_id"""
         pass
     
     @abstractmethod
-    async def get_orders_by_date_range(self, start_date: str, end_date: str) -> List[Order]:
+    def get_orders_by_date_range(self, start_date: str, end_date: str) -> List[Order]:
         """Busca pedidos por intervalo de datas"""
         pass

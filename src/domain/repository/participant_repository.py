@@ -10,26 +10,26 @@ class ParticipantRepository(BaseRepository[Participant]):
     """
     
     @abstractmethod
-    async def get_by_email(self, email: str) -> Optional[Participant]:
+    def get_by_email(self, email: str) -> Optional[Participant]:
         """Busca participante por email"""
         pass
     
     @abstractmethod
-    async def get_by_cpf(self, cpf: str) -> Optional[Participant]:
+    def get_by_cpf(self, cpf: str) -> Optional[Participant]:
         """Busca participante por CPF"""
         pass
     
     @abstractmethod
-    async def get_by_city(self, city: str) -> List[Participant]:
+    def get_by_city(self, city: str) -> List[Participant]:
         """Busca participantes por cidade"""
         pass
     
     @abstractmethod
-    async def email_exists(self, email: str) -> bool:
+    def email_exists(self, email: str) -> bool:
         """Verifica se um email já existe"""
         pass
     
     @abstractmethod
-    async def cpf_exists(self, cpf: str) -> bool:
+    def cpf_exists(self, cpf: str) -> bool:
         """Verifica se um CPF já existe"""
         pass

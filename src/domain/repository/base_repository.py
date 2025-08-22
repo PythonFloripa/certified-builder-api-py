@@ -12,31 +12,31 @@ class BaseRepository(ABC, Generic[T]):
     """
     
     @abstractmethod
-    async def create(self, entity: T) -> T:
+    def create(self, entity: T) -> T:
         """Cria uma nova entidade no repositório"""
         pass
     
     @abstractmethod
-    async def get_by_id(self, entity_id: str) -> Optional[T]:
+    def get_by_id(self, entity_id: str) -> Optional[T]:
         """Busca uma entidade pelo ID"""
         pass
     
     @abstractmethod
-    async def get_all(self) -> List[T]:
+    def get_all(self) -> List[T]:
         """Busca todas as entidades"""
         pass
     
     @abstractmethod
-    async def update(self, entity_id: str, entity: T) -> Optional[T]:
+    def update(self, entity_id: str, entity: T) -> Optional[T]:
         """Atualiza uma entidade existente"""
         pass
     
     @abstractmethod
-    async def delete(self, entity_id: str) -> bool:
+    def delete(self, entity_id: str) -> bool:
         """Remove uma entidade pelo ID"""
         pass
     
     @abstractmethod
-    async def exists(self, entity_id: str) -> bool:
+    def exists(self, entity_id: str) -> bool:
         """Verifica se uma entidade existe"""
         pass
