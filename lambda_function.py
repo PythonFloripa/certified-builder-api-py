@@ -1,21 +1,10 @@
-import logging
-from aws_lambda_typing.events import SQSEvent
-from aws_lambda_typing.context import Context
+from aws_lambda_powertools.utilities.typing import LambdaContext
+from src.infrastructure.aws.api_gateway_restr_resolver import app
 
-from src.domain.response import Response
+# Importa os controladores para registrar as rotas
+from src.main.presentation.controller import certificate
 
-
-logger = logging.getLogger()
-logger.setLevel(logging.INFO)
-
-
-def lambda_handler(event: SQSEvent, context: Context) -> Response:
-    try:
-        response = Response(status=200, message="Event processed successfully")
-        return response.model_dump_json(exclude_none=True)
-    except Exception as e:
-        logger.error(f"Error processing event: {e}")
-        response = Response(status=500, message="Internal Server Error", details=str(e))
-        return response.model_dump_json(exclude_none=True)
-
+def lambda_handler(event: dict, context: LambdaContext) -> dict:
+    return app.resolve(event, context)
+    
 
