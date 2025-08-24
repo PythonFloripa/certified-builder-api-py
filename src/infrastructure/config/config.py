@@ -6,10 +6,8 @@ from pydantic import Field
 logger = logging.getLogger(__name__)
 
 class Config(BaseSettings):
-    KEY_ACCESS: str
-    KEY_SECRET: str
     REGION: str
-    QUEUE_URL: str
+    BUILDER_QUEUE_URL: str
     ENVIRONMENT: str = Field(default="dev")
     PROJECT_NAME: str = Field(default="certified-builder-api-py")
     URL_SERVICE_TECH: str

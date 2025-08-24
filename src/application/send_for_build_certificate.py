@@ -14,13 +14,7 @@ class SendForBuildCertificate:
         self.parts = 4
         self.sqs_service = sqs_service
 
-    @retry(
-            exceptions=Exception,
-            tries=2,
-            delay=2,
-            backoff=2,
-            logger=logger
-    )
+    
     def execute(self, orders: List[TechOrdersResponse]):
         processed_orders = self.__processed_orders_dict(orders)
         for part in processed_orders:
@@ -33,6 +27,13 @@ class SendForBuildCertificate:
             parts.append([order.model_dump() for order in orders[i:i+self.parts]])
         return parts
     
+    @retry(
+            exceptions=Exception,
+            tries=2,
+            delay=2,
+            backoff=2,
+            logger=logger
+    )
     def __send_to_sqs(self, orders: List[dict]):
         try:
             logger.info(f"Sending {len(orders)} orders to build certificate.")            
