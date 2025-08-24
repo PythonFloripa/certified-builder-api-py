@@ -1,7 +1,9 @@
 import logging
+from datetime import datetime
 from typing import List, Optional
 from src.domain.response.tech_floripa import TechOrdersResponse
 from src.domain.response.build_order import BuildOrderResponse
+from src.domain.response.processed_orders import ProcessedOrdersResponse
 from src.application.mapper.tech_order import TechOrderMapper, TechProductMapper, TechParticipantMapper, CertificateMapper
 
 from src.domain.repository.certificate_repository import CertificateRepository
@@ -10,7 +12,6 @@ from src.domain.repository.product_repository import ProductRepository
 from src.domain.repository.order_repository import OrderRepository
 
 from src.infrastructure.container.dependency_container import container
-from src.infrastructure.aws.sqs_service import SQSService
 
 logger = logging.getLogger()
 
@@ -26,7 +27,7 @@ class CreateCertificate:
         self.order_repository:OrderRepository = container.get('order_repository')
 
 
-    def execute(self, tech_orders: List[TechOrdersResponse]) -> BuildOrderResponse:
+    def execute(self, tech_orders: List[TechOrdersResponse]) -> ProcessedOrdersResponse:
         logger.info(f"Starting certificate creation process for tech orders size: {len(tech_orders)}.")
         
         if len(tech_orders) == 0:
@@ -52,18 +53,10 @@ class CreateCertificate:
 
         logger.info(f"Successfully processed {len(processed_orders)} certificates.")
 
-        return self.__build_response(processed_orders, invalid_orders, processed_orders)
 
-    def __build_response(self, processed_orders: List[TechOrdersResponse], 
-                         invalid_orders: List[TechOrdersResponse], 
-                         valid_orders: List[TechOrdersResponse]) -> BuildOrderResponse:
-        
-        logger.info(f"Building response for {len(processed_orders)} processed orders, {len(invalid_orders)} invalid orders and {len(valid_orders)} valid orders.")
-        
-        return BuildOrderResponse(
-            certificate_quantity=len(processed_orders),
-            existing_orders=[order.order_id for order in invalid_orders],
-            new_orders=[order.order_id for order in valid_orders]
+        return ProcessedOrdersResponse(
+            valid_orders=processed_orders,
+            invalid_orders=invalid_orders,
         )
 
     def __validate_tech_orders_with_time_checkin(self, tech_orders: List[TechOrdersResponse]) -> tuple[List[TechOrdersResponse], List[int]]:
