@@ -2,7 +2,6 @@ import logging
 from datetime import datetime
 from typing import List, Optional
 from src.domain.response.tech_floripa import TechOrdersResponse
-from src.domain.response.build_order import BuildOrderResponse
 from src.domain.response.processed_orders import ProcessedOrdersResponse
 from src.application.mapper.tech_order import TechOrderMapper, TechProductMapper, TechParticipantMapper, CertificateMapper
 
@@ -32,10 +31,9 @@ class CreateCertificate:
         
         if len(tech_orders) == 0:
             logger.info("No tech orders provided, skipping certificate creation.")
-            return BuildOrderResponse(
-                certificate_quantity=0,
-                existing_orders=[],
-                new_orders=[]
+            return ProcessedOrdersResponse(
+                valid_orders=[],
+                invalid_orders=[]
             )
         # Valida e processa as ordens
         valid_orders, invalid_orders = self.__validate_tech_orders_with_time_checkin(tech_orders)
