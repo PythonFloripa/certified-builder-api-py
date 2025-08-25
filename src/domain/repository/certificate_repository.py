@@ -25,6 +25,11 @@ class CertificateRepository(BaseRepository[Certificate]):
         pass
     
     @abstractmethod
+    def get_by_email_and_product_id(self, email: str, product_id: int) -> List[Certificate]:
+        """Busca certificados por email do participante e product_id"""
+        pass
+    
+    @abstractmethod
     def get_successful_certificates(self) -> List[Certificate]:
         """Busca apenas certificados com sucesso=True"""
         pass

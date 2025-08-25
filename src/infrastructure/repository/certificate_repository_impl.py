@@ -230,6 +230,35 @@ class CertificateRepositoryImpl(CertificateRepository):
             logger.error(f"Erro ao buscar certificados por email {email}: {str(e)}")
             raise
     
+    def get_by_email_and_product_id(self, email: str, product_id: int) -> List[Certificate]:
+        """
+        Busca certificados por email do participante e product_id.
+        Usado pelo endpoint que recebe email como path e product_id como query parameter.
+        """
+        try:
+            filter_expression = "participant_email = :email AND product_id = :product_id"
+            expression_values = {
+                ":email": email,
+                ":product_id": product_id
+            }
+            
+            items = self.dynamodb_service.scan_table(
+                self.table_name, 
+                filter_expression, 
+                expression_values
+            )
+            
+            certificates = []
+            for item in items:
+                certificates.append(Certificate(**item))
+            
+            logger.info(f"Encontrados {len(certificates)} certificados para email {email} e product_id {product_id}")
+            return certificates
+            
+        except Exception as e:
+            logger.error(f"Erro ao buscar certificados por email {email} e product_id {product_id}: {str(e)}")
+            raise
+    
     def get_by_product_id(self, product_id: int) -> List[Certificate]:
         
         try:

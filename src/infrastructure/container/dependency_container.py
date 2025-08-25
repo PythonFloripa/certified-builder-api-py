@@ -47,6 +47,7 @@ class DependencyContainer:
         # Registra serviços de aplicação
         self._services['send_for_build_certificate'] = self._create_send_for_build_certificate
         self._services['create_certificate'] = self._create_create_certificate
+        self._services['fetch_certificate'] = self._create_fetch_certificate
         self._services['fetch_order_tech_floripa'] = self._create_fetch_order_tech_floripa
 
     def get(self, service_name: str) -> Any:
@@ -126,6 +127,12 @@ class DependencyContainer:
         """Cria uma instância do CreateCertificate."""
         from src.application.create_certificate import CreateCertificate
         return CreateCertificate()
+
+    def _create_fetch_certificate(self):
+        """Cria uma instância do FetchCertificate."""
+        from src.application.fetch_certificate import FetchCertificate
+        return FetchCertificate()
+
 
     def _create_fetch_order_tech_floripa(self):
         """
