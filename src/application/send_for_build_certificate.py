@@ -11,9 +11,8 @@ logger.setLevel(logging.INFO)
 
 class SendForBuildCertificate:
     def __init__(self, sqs_service: SQSService):
-        self.parts = 4
         self.sqs_service = sqs_service
-
+        self.parts = 30
     
     def execute(self, orders: List[TechOrdersResponse]):
         processed_orders = self.__processed_orders_dict(orders)
@@ -22,6 +21,7 @@ class SendForBuildCertificate:
 
 
     def __processed_orders_dict(self, orders: List[TechOrdersResponse]) -> List[List[dict]]:
+        # Divide as ordens em partes para enviar para a fila de build de certificado,
         parts = []
         for i in range(0, len(orders), self.parts):
             parts.append([order.model_dump() for order in orders[i:i+self.parts]])
