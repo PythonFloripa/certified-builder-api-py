@@ -1,6 +1,7 @@
 import json
 import logging
-from typing import List, Optional
+import uuid
+from typing import List, Optional, Union
 from src.domain.entity.order import Order
 from src.domain.repository.order_repository import OrderRepository
 from src.infrastructure.aws.dynamodb_service import DynamoDBService
@@ -33,6 +34,35 @@ class OrderRepositoryImpl(OrderRepository):
                 return Order(**item)
             return None
             
+        except Exception as e:
+            logger.error(f"Erro ao buscar pedido por ID {entity_id}: {str(e)}")
+            raise
+    
+    def find_by_id(self, entity_id: Union[str, uuid.UUID]) -> Optional[Order]:
+        """
+        Busca pedido por ID, aceitando tanto string quanto UUID.
+        Implementa o método abstrato definido na classe base BaseRepository.
+        Nota: Como Order usa int como ID, converte string/UUID para int.
+        """
+        try:
+            # Converte para string primeiro, depois para int
+            if isinstance(entity_id, uuid.UUID):
+                # Se for UUID, converte para string e depois tenta extrair um int
+                # Isso pode não ser ideal - talvez precise de uma lógica específica
+                id_str = str(entity_id)
+                # Por enquanto, vamos tentar usar os primeiros dígitos como int
+                # Isso é uma solução temporária - talvez precise ajustar conforme a lógica de negócio
+                id_int = int(id_str.replace('-', '')[:10])  # Pega os primeiros 10 dígitos
+            else:
+                # Se for string, tenta converter para int
+                id_int = int(str(entity_id))
+            
+            # Reutiliza a lógica existente do get_by_id
+            return self.get_by_id(id_int)
+            
+        except (ValueError, TypeError) as e:
+            logger.error(f"Erro ao converter ID {entity_id} para int: {str(e)}")
+            return None
         except Exception as e:
             logger.error(f"Erro ao buscar pedido por ID {entity_id}: {str(e)}")
             raise

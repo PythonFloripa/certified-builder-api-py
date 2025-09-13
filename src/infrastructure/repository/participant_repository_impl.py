@@ -1,6 +1,7 @@
 import json
 import logging
-from typing import List, Optional
+import uuid
+from typing import List, Optional, Union
 from src.domain.entity.participant import Participant
 from src.domain.repository.participant_repository import ParticipantRepository
 from src.infrastructure.aws.dynamodb_service import DynamoDBService
@@ -30,6 +31,22 @@ class ParticipantRepositoryImpl(ParticipantRepository):
             if item:
                 return Participant(**item)
             return None
+            
+        except Exception as e:
+            logger.error(f"Erro ao buscar participante por ID {entity_id}: {str(e)}")
+            raise
+    
+    def find_by_id(self, entity_id: Union[str, uuid.UUID]) -> Optional[Participant]:
+        """
+        Busca participante por ID, aceitando tanto string quanto UUID.
+        Implementa o método abstrato definido na classe base BaseRepository.
+        """
+        try:
+            # Converte UUID para string se necessário
+            id_str = str(entity_id) if isinstance(entity_id, uuid.UUID) else entity_id
+            
+            # Reutiliza a lógica existente do get_by_id
+            return self.get_by_id(id_str)
             
         except Exception as e:
             logger.error(f"Erro ao buscar participante por ID {entity_id}: {str(e)}")
