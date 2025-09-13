@@ -55,6 +55,7 @@ class FetchCertificateStrategy(ABC):
             participant_email=certificate.participant_email,
             participant_document=certificate.participant_cpf,
             certificate_url=certificate.certificate_url,
+            certificate_key=certificate.certificate_key,
             created_at=certificate.generated_date,
             updated_at=certificate.generated_date,  # Assumindo que não temos updated_at separado
             email=certificate.participant_email,

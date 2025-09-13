@@ -6,11 +6,12 @@ Segue o padrão Dependency Injection Container para Clean Architecture.
 from typing import Dict, Any
 from src.infrastructure.aws.dynamodb_service import DynamoDBService
 from src.infrastructure.aws.sqs_service import SQSService
+from src.infrastructure.aws.file_manager import FileManager
 from src.infrastructure.repository.certificate_repository_impl import CertificateRepositoryImpl
 from src.infrastructure.repository.participant_repository_impl import ParticipantRepositoryImpl
 from src.infrastructure.repository.product_repository_impl import ProductRepositoryImpl
 from src.infrastructure.repository.order_repository_impl import OrderRepositoryImpl
-from src.application.fetch_order_tech_floripa import FetchOrderTechFloripa
+
 
 class DependencyContainer:
     """
@@ -37,6 +38,7 @@ class DependencyContainer:
         Define como cada dependência deve ser criada.
         """
         # Registra serviços de infraestrutura
+        self._services['file_manager'] = self._create_file_manager
         self._services['dynamodb_service'] = self._create_dynamodb_service
         self._services['sqs_service'] = self._create_sqs_service
         # Registra repositórios
@@ -49,6 +51,7 @@ class DependencyContainer:
         self._services['create_certificate'] = self._create_create_certificate
         self._services['fetch_certificate'] = self._create_fetch_certificate
         self._services['fetch_order_tech_floripa'] = self._create_fetch_order_tech_floripa
+        self._services['download_certificate'] = self._create_download_certificate
 
     def get(self, service_name: str) -> Any:
         """
@@ -82,6 +85,10 @@ class DependencyContainer:
         Útil para testes.
         """
         self._singletons.clear()
+    
+    def _create_file_manager(self) -> FileManager:
+        """Cria uma instância do FileManager."""
+        return FileManager()
     
     def _create_sqs_service(self) -> SQSService:
         """Cria uma instância do SQSService."""
@@ -133,7 +140,11 @@ class DependencyContainer:
         from src.application.fetch_certificate import FetchCertificate
         return FetchCertificate()
 
-
+    def _create_download_certificate(self):
+        """Cria uma instância do DownloadCertificate."""
+        from src.application.download_certificate import DownloadCertificate
+        return DownloadCertificate()
+        
     def _create_fetch_order_tech_floripa(self):
         """
         Cria uma instância do FetchOrderTechFloripa.

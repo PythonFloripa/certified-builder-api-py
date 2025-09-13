@@ -8,6 +8,7 @@ logger = logging.getLogger(__name__)
 class Config(BaseSettings):
     REGION: str
     BUILDER_QUEUE_URL: str
+    S3_BUCKET_NAME: str
     ENVIRONMENT: str = Field(default="dev")
     PROJECT_NAME: str = Field(default="certified-builder-api-py")
     URL_SERVICE_TECH: str

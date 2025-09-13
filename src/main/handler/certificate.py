@@ -2,7 +2,8 @@ import logging
 from typing import List
 from src.main.presentation.http_types.create_certificate import CreateCertificateRequest
 from src.main.presentation.http_types.fetch_certificate import FetchCertificateRequest, FetchCertificateResponse
-from src.application.dto.fetch_certificate_dto import FetchCertificateRequestDto, FetchCertificateResponseDto
+from src.main.presentation.http_types.download_certificate import DownloadCertificateRequest, DownloadCertificateResponse
+from src.application.dto.fetch_certificate_dto import FetchCertificateRequestDto
 from src.domain.response.build_order import BuildOrderResponse
 from src.domain.response.tech_floripa import TechOrdersResponse
 from src.domain.response.processed_orders import ProcessedOrdersResponse
@@ -10,6 +11,7 @@ from src.application.create_certificate import CreateCertificate
 from src.application.send_for_build_certificate import SendForBuildCertificate
 from src.application.fetch_order_tech_floripa import FetchOrderTechFloripa
 from src.application.fetch_certificate import FetchCertificate
+from src.application.download_certificate import DownloadCertificate
 from src.infrastructure.container.dependency_container import container
 
 
@@ -84,3 +86,23 @@ def fetch_certificate_handler(request: FetchCertificateRequest) -> List[FetchCer
         presentation_responses.append(presentation_response)
     
     return presentation_responses
+
+
+def download_certificate_handler(request: DownloadCertificateRequest) -> DownloadCertificateResponse:
+    logger.info(f"Downloading certificate for request: {request}")
+    
+    from src.application.dto.download_certificate_dto import DownloadCertificateRequestDto
+    
+    application_request = DownloadCertificateRequestDto(id=request.id)
+    
+    download_certificate: DownloadCertificate = container.get('download_certificate')
+    application_response = download_certificate.execute(application_request)
+    
+    response = DownloadCertificateResponse(
+        certificate_url=application_response.certificate_url,
+        email=application_response.email,
+        product_id=application_response.product_id,
+        success=application_response.success
+    )
+
+    return response

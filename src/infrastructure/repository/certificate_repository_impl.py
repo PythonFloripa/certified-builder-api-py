@@ -1,9 +1,10 @@
 import json
 import logging
-from typing import List, Optional
+from typing import List, Optional, Union
 from src.domain.entity.certificate import Certificate
 from src.domain.repository.certificate_repository import CertificateRepository
 from src.infrastructure.aws.dynamodb_service import DynamoDBService
+import uuid
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -184,6 +185,29 @@ class CertificateRepositoryImpl(CertificateRepository):
         except Exception as e:
             logger.error(f"Erro ao verificar existência do certificado {entity_id}: {str(e)}")
             return False
+    
+    def find_by_id(self, entity_id: Union[str, uuid.UUID]) -> Optional[Certificate]:
+        try:
+            # Converte UUID para string se necessário
+            if isinstance(entity_id, uuid.UUID):
+                entity_id = str(entity_id)
+            
+            filter_expression = "id = :id"
+            expression_values = {":id": entity_id}
+            
+            items = self.dynamodb_service.scan_table(
+                self.table_name, 
+                filter_expression, 
+                expression_values
+            )
+            
+            if items:
+                return Certificate(**items[0])
+            return None
+            
+        except Exception as e:
+            logger.error(f"Erro ao buscar certificado por UUID {entity_id}: {str(e)}")
+            raise
     
     def get_by_order_id(self, order_id: int) -> List[Certificate]:
         

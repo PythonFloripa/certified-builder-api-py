@@ -1,7 +1,8 @@
 from abc import abstractmethod
-from typing import List, Optional
+from typing import List, Optional, Union
 from src.domain.entity.certificate import Certificate
 from src.domain.repository.base_repository import BaseRepository
+import uuid
 
 class CertificateRepository(BaseRepository[Certificate]):
     """

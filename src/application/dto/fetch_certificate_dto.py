@@ -27,6 +27,7 @@ class FetchCertificateResponseDto(BaseModel):
     participant_email: Optional[str] = None
     participant_document: Optional[str] = None
     certificate_url: Optional[str] = None
+    certificate_key: Optional[str] = None
     created_at: Optional[str] = None
     updated_at: Optional[str] = None
     email: Optional[str] = None
