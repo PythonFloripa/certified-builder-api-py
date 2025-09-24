@@ -1,28 +1,172 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Certificado Não Gerado</title>
+    <title>Certificado em Processamento - Tech Floripa</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
-        body {{ font-family: Arial, sans-serif; text-align: center; padding: 50px; background-color: #f8f9fa; }}
-        .container {{ max-width: 600px; margin: 0 auto; background: white; padding: 40px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }}
-        .info-icon {{ font-size: 48px; color: #17a2b8; margin-bottom: 20px; }}
-        h1 {{ color: #0c5460; margin-bottom: 20px; }}
-        p {{ color: #6c757d; line-height: 1.6; margin-bottom: 20px; }}
-        .info-code {{ background-color: #d1ecf1; color: #0c5460; padding: 10px; border-radius: 4px; font-family: monospace; }}
-        .status-info {{ background-color: #fff3cd; color: #856404; padding: 15px; border-radius: 4px; margin-top: 20px; }}
+        body {{
+            font-family: Manrope, sans-serif;
+            margin: 0;
+            padding: 10px;
+            background-color: #f4f4f4;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }}
+        
+        .email-container {{
+            width: 100%;
+            max-width: 500px;
+            background-color: #ffffff;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2);
+        }}
+        
+        .email-header {{
+            background-color: #000000;
+            color: #ffffff;
+            padding: 15px;
+            border-radius: 10px 10px 0 0;
+            text-align: center;
+            margin: -15px -15px 15px -15px;
+        }}
+        
+        .email-body {{
+            padding: 15px;
+            font-size: 14px;
+            line-height: 1.5;
+            text-align: center;
+        }}
+        
+        .info-icon {{
+            font-size: 48px;
+            margin-bottom: 15px;
+        }}
+        
+        h1 {{
+            color: #000000;
+            margin-bottom: 15px;
+            font-size: 22px;
+            font-weight: bold;
+        }}
+        
+        p {{
+            color: #333333;
+            margin-bottom: 10px;
+        }}
+        
+        .info-code {{
+            background-color: #e7f3ff;
+            color: #0c5460;
+            padding: 12px;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 12px;
+            margin: 15px 0;
+            border-left: 4px solid #17a2b8;
+        }}
+        
+        .status-info {{
+            background-color: #fff3cd;
+            color: #856404;
+            padding: 12px;
+            border-radius: 5px;
+            margin: 15px 0;
+            border-left: 4px solid #ffc107;
+        }}
+        
+        .email-button-container {{
+            text-align: center;
+            margin: 20px 0;
+        }}
+        
+        .email-button {{
+            display: inline-block;
+            background-color: #000000;
+            color: #ffffff !important;
+            text-decoration: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            font-size: 13px;
+            font-weight: bold;
+            text-align: center;
+            transition: background-color 0.3s ease;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            margin: 0 5px;
+        }}
+        
+        .email-button:hover {{
+            background-color: #353535;
+        }}
+        
+        .email-note {{
+            font-size: 12px;
+            color: #666666;
+            margin-top: 10px;
+        }}
+        
+        .email-footer {{
+            background-color: #000000;
+            color: #ffffff;
+            padding: 12px;
+            border-radius: 0 0 10px 10px;
+            text-align: center;
+            font-size: 12px;
+            margin: 15px -15px -15px -15px;
+        }}
+        
+        .email-footer a {{
+            color: #ffffff;
+            text-decoration: none;
+        }}
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="info-icon">⏳</div>
-        <h1>Certificado Não Foi Gerado</h1>
-        <p>O certificado solicitado ainda não foi processado ou houve erro na geração.</p>
-        <p>Isso pode acontecer quando o certificado está em processamento ou se houve algum problema técnico durante a criação.</p>
-        <div class="info-code">Status 200 - Certificado Não Disponível</div>
-        <div class="status-info">
-            <strong>Próximos passos:</strong> Aguarde alguns minutos e tente novamente. Se o problema persistir, entre em contato com o suporte.
+    <div class="email-container">
+        <div class="email-header">
+            <img src="https://tech.floripa.br/wp-content/uploads/2025/03/Tech-Floripa.jpg"
+                 alt="Tech Floripa"
+                 style="display: block; margin: 0 auto; max-width: 200px; height: auto;">
+        </div>
+        
+        <div class="email-body">
+            <div class="info-icon">⏳</div>
+            <h1>Certificado em Processamento</h1>
+            
+            <p>Seu certificado ainda está sendo processado em nossos sistemas.</p>
+            <p>Isso pode acontecer quando há um grande volume de certificados sendo gerados ou se houve algum problema técnico temporário.</p>
+            
+            <div class="info-code">
+                <strong>Status:</strong> Certificado não disponível no momento
+            </div>
+            
+            <div class="status-info">
+                <strong>Próximos passos:</strong> Aguarde alguns minutos e tente acessar novamente. Se o problema persistir após 30 minutos, entre em contato com o suporte.
+            </div>
+            
+            <div class="email-button-container">
+                <a href="javascript:location.reload();" class="email-button">
+                    🔄 Tentar Novamente
+                </a>
+                <a href="https://tech.floripa.br/" class="email-button">
+                    🏠 Voltar ao Site
+                </a>
+            </div>
+            
+            <p class="email-note">
+                Em caso de dúvidas, entre em contato conosco através do nosso site oficial.
+            </p>
+        </div>
+        
+        <div class="email-footer">
+            <h3 style="color: #fff; margin: 0 0 10px 0;">Ajude a fortalecer a Comunidade Tech de Floripa!</h3>
+            <p style="margin: 0;">
+                Indique o Tech Floripa para outros eventos<br>
+                <a href="https://tech.floripa.br/">→ tech.floripa.br</a>
+            </p>
         </div>
     </div>
 </body>

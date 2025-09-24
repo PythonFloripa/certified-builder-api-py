@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="UTF-8">
+        <style>
+            body {
+                font-family: Manrope, sans-serif;
+                margin: 0;
+                padding: 0;
+                background-color: #f4f4f4;
+            }
+			
+            .email-container {
+                width: 100%;
+                max-width: 600px;
+                margin: 0 auto;
+                background-color: #ffffff;
+                padding: 20px;
+                border-radius: 10px;
+                box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2);
+            }
+			
+            .email-header {
+                background-color: #000000;
+                color: #ffffff;
+                padding: 10px;
+                border-radius: 10px 10px 0 0;
+                text-align: center;
+                font-size: 36px;
+				font-weight: bold;
+            }
+			
+            .email-footer {
+                background-color: #000000;
+                color: #ffffff;
+                padding: 10px;
+                border-radius: 0 0 10px 10px;
+                text-align: center;
+                font-size: 14px;
+                margin-top: 20px;
+            }
+			
+            .email-body {
+                padding: 20px;
+                font-size: 16px;
+                line-height: 1.6;
+            }
+			
+			.email-button-container {
+				text-align: center;
+			}
+
+			.email-button {
+				display: inline-block;
+				background-color: #000000;
+				color: #ffffff !important;
+				text-decoration: none;
+				padding: 10px 20px;
+				border-radius: 5px;
+				font-size: 16px;
+				font-weight: bold;
+				text-align: center;
+				margin: 20px 0;
+				transition: background-color 0.3s ease;
+				box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+			}
+
+			.email-button:hover {
+				background-color: #353535;
+			}
+
+			.email-note {
+				font-size: 14px;
+				color: #666666;
+				margin-top: 10px;
+				text-align: center;
+			}
+        </style>
+    </head>
+    <body>
+        <div class="email-container">
+            <div class="email-header">
+            	<!-- Custom Header Image -->
+				<img src="https://tech.floripa.br/wp-content/uploads/2025/03/Tech-Floripa.jpg"
+					 alt="Logo"
+					 style="
+					   display: block;
+					   margin: 0 auto; 
+					   max-width: 200px;
+					   height: auto;
+					   border-top-left-radius: 10px;
+					   border-top-right-radius: 10px;
+					 ">
+				<!-- End Custom Header Image -->
+				</div>
+            <div class="email-body">Olá Jardel, seu certificado para o evento "Evento de Teste" está pronto. Você pode baixá-lo aqui: https://j6rgb6tlr9.execute-api.us-east-1.amazonaws.com/dev/api/v1/certificate/download?id=a381c1c9-8001-45f1-bc81-0eda541818f9</div>
+            <div class="email-footer">
+                <h3 style="color: #fff;">Ajude a fortalecer a Comunidade Tech de Floripa!</h3><p>Indique o Tech Floripa para outros eventos<br><a href="https://tech.floripa.br/" style="color: #fff; text-decoration: none;">→ tech.floripa.br</a></p>
+            </div>
+        </div>
+    </body>
+    </html>
