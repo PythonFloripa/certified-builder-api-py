@@ -82,11 +82,20 @@ class CreateCertificate:
         
         logger.info(f"Registering certificate for order ID: {order.order_id} and product ID: {order.product_id}.")
         
-        try:
+        try:            
             # Mapeia os dados da ordem técnica para entidades
             order_entity = TechOrderMapper.to_entity(order)
             product_entity = TechProductMapper.to_entity(order)
             participant_entity = TechParticipantMapper.to_entity(order)            
+
+
+            # Verifica se existe um certificado para a ordem
+            certificate_exist = self.certificate_repository.get_by_order_id(order.order_id)
+            if certificate_exist and len(certificate_exist) > 0:
+                if certificate_exist[0].success:
+                    logger.info(f"Certificate already exists for order {order.order_id}, skipping certificate creation.")
+                    return None
+           
 
             # Verifica se o participante já existe
             participant_exist = self.participant_repository.get_by_email(order.email)
