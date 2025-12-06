@@ -1,6 +1,7 @@
 import logging
 from typing import List
 from src.main.presentation.http_types.create_certificate import CreateCertificateRequest
+from src.main.presentation.http_types.create_certificates import CreateCertificatesRequest
 from src.main.presentation.http_types.fetch_certificate import FetchCertificateRequest, FetchCertificateResponse
 from src.main.presentation.http_types.download_certificate import DownloadCertificateRequest, DownloadCertificateResponse
 from src.application.dto.fetch_certificate_dto import FetchCertificateRequestDto
@@ -106,3 +107,38 @@ def download_certificate_handler(request: DownloadCertificateRequest) -> Downloa
     )
 
     return response
+
+
+def create_certificates_handler(request: CreateCertificatesRequest) -> BuildOrderResponse:
+    """
+    Handler para processar uma lista de certificados recebida diretamente.
+    Reaproveita a lógica do CreateCertificate sem buscar da API externa.
+    """
+    logger.info(f"Iniciando processamento de {len(request.certificates)} certificados recebidos")
+
+    create_certificate: CreateCertificate = container.get('create_certificate')
+    send_for_build_certificate: SendForBuildCertificate = container.get('send_for_build_certificate')
+
+    # Converte os certificados recebidos para TechOrdersResponse
+    tech_orders: List[TechOrdersResponse] = [
+        TechOrdersResponse.model_validate(cert.model_dump())
+        for cert in request.certificates
+    ]
+
+    logger.info(f"Convertidos {len(tech_orders)} certificados para TechOrdersResponse")
+
+    # Processa os certificados usando a mesma lógica do CreateCertificate
+    processed_orders: ProcessedOrdersResponse = create_certificate.execute(tech_orders)
+
+    # Envia as ordens válidas para construção de certificados
+    if len(processed_orders.valid_orders) > 0:
+        logger.info(f"Enviando {len(processed_orders.valid_orders)} novas ordens para construção de certificados")
+        send_for_build_certificate.execute(processed_orders.valid_orders)
+    else:
+        logger.info("Nenhuma ordem nova para enviar para construção de certificados")
+
+    return BuildOrderResponse(
+        certificate_quantity=len(tech_orders),
+        existing_orders=[order.order_id for order in processed_orders.invalid_orders],
+        new_orders=[order.order_id for order in processed_orders.valid_orders]
+    )
