@@ -9,9 +9,10 @@ from src.infrastructure.aws.api_gateway_restr_resolver import app
 from src.infrastructure.config.config import config
 
 from src.main.presentation.http_types.create_certificate import CreateCertificateRequest
+from src.main.presentation.http_types.create_certificates import CreateCertificatesRequest
 from src.main.presentation.http_types.fetch_certificate import FetchCertificateRequest, FetchCertificateResponse
 from src.main.presentation.http_types.download_certificate import DownloadCertificateRequest, DownloadCertificateResponse
-from src.main.handler.certificate import create_certificate_handler, fetch_certificate_handler, download_certificate_handler
+from src.main.handler.certificate import create_certificate_handler, create_certificates_handler, fetch_certificate_handler, download_certificate_handler
 from src.main.presentation.template_loader import template_loader
 from src.domain.response.build_order import BuildOrderResponse
 from src.domain.response.failed import FailedResponse
@@ -29,6 +30,25 @@ def create_certificate() -> BuildOrderResponse:
         return response
     except Exception as e:
         logger.error(f"Erro ao processar a requisição: {e}")
+        return FailedResponse(
+            details=str(e),
+            message="Internal Server Error",
+            status=500
+        )
+
+
+@app.post(f"{config.PREFIX_API_VERSION}/certificate/create-batch")
+def create_certificates() -> BuildOrderResponse:
+    """
+    Endpoint para receber uma lista de certificados e processá-los.
+    Recebe uma lista de objetos de certificado e processa cada um deles.
+    """
+    try:
+        request: CreateCertificatesRequest = parse(app.current_event.body, CreateCertificatesRequest)
+        response: BuildOrderResponse = create_certificates_handler(request)
+        return response
+    except Exception as e:
+        logger.error(f"Erro ao processar a requisição de certificados em lote: {e}")
         return FailedResponse(
             details=str(e),
             message="Internal Server Error",
