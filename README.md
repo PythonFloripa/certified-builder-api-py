@@ -6,12 +6,18 @@ Esta API é responsável por gerenciar a criação, consulta e download de certi
 
 ## Tecnologias Utilizadas
 
-- **Python 3.12**
+- **Python 3.13**
 - **AWS Lambda**
 - **API Gateway**
 - **Boto3**: AWS SDK para Python.
 - **Pydantic**: Para validação de dados.
 - **Docker**: Para containerização da aplicação.
+
+## Desenvolvimento e Deploy
+
+- **Local**: `docker compose up --build` expõe a Lambda em `http://localhost:9000`.
+- **Smoke test**: `python test_local.py` ou `bash test_lambda_container.sh`.
+- **Deploy**: o workflow `.github/workflows/workflow_build.yaml` gera um ZIP e atualiza a função `tech-floripa-certificates-api-dev` com `aws lambda update-function-code`.
 
 ## Endpoints
 

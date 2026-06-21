@@ -1,50 +1,34 @@
-FROM public.ecr.aws/lambda/python:3.13
+FROM python:3.13-slim
 
-# Install system dependencies
-# Removido dnf update para evitar conflitos de versão
-# Removido curl pois já está disponível na imagem base
-# Adicionado tar necessário para o instalador do UV
-RUN dnf install -y \
-    freetype-devel \
-    libjpeg-turbo-devel \
-    zlib-devel \
-    gcc \
-    make \
-    python3-devel \
-    fontconfig \
-    ca-certificates \
-    tar && \
-    dnf clean all
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends curl zip ca-certificates && \
+    rm -rf /var/lib/apt/lists/*
 
-# Download the latest UV installer
 ADD https://astral.sh/uv/install.sh /uv-installer.sh
 
-# Run the installer then remove it
 RUN sh /uv-installer.sh && rm /uv-installer.sh
 
-# Ensure the installed binary is on the PATH
 ENV PATH="/root/.local/bin/:$PATH"
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+ENV PYTHONPATH=/var/task
+ENV AWS_LAMBDA_RUNTIME_API=""
 
-# Set working directory
-WORKDIR ${LAMBDA_TASK_ROOT}
+WORKDIR /var/task
 
-# Copy project configuration files for UV
 COPY pyproject.toml .
 COPY uv.lock .
 
-# Install dependencies globally using UV
-# Export dependencies to requirements.txt and install them globally
 RUN uv export --format requirements.txt > requirements.txt && \
-    uv pip install --system -r requirements.txt
+    uv pip install --system -r requirements.txt && \
+    pip install --no-cache-dir awslambdaric
 
-# Copy the entire application
+ADD https://github.com/aws/aws-lambda-runtime-interface-emulator/releases/latest/download/aws-lambda-rie /usr/local/bin/aws-lambda-rie
+RUN chmod +x /usr/local/bin/aws-lambda-rie
+
 COPY . .
+COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
-# Set environment variables
-ENV PYTHONPATH=${LAMBDA_TASK_ROOT}
-ENV FONTCONFIG_PATH=/etc/fonts
-ENV PYTHONDONTWRITEBYTECODE=1
-ENV PYTHONUNBUFFERED=1
-
-# Set the CMD to your handler
+ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
 CMD [ "lambda_function.lambda_handler" ]
