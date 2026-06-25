@@ -1,7 +1,8 @@
-import json
 import logging
 import uuid
+from datetime import datetime, timedelta
 from typing import List, Optional, Union
+
 from src.domain.entity.order import Order
 from src.domain.repository.order_repository import OrderRepository
 from src.infrastructure.aws.dynamodb_service import DynamoDBService
@@ -9,229 +10,223 @@ from src.infrastructure.aws.dynamodb_service import DynamoDBService
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
+
+def _normalize_email(email: str) -> str:
+    return email.strip().lower()
+
+
+def _parse_order_date(value: str) -> datetime:
+    normalized_value = value.replace("Z", "+00:00")
+    for parser in (
+        lambda: datetime.fromisoformat(normalized_value),
+        lambda: datetime.strptime(value, "%Y-%m-%d %H:%M:%S"),
+        lambda: datetime.strptime(value, "%Y-%m-%d"),
+    ):
+        try:
+            return parser()
+        except ValueError:
+            continue
+    raise ValueError(f"Formato de order_date não suportado: {value}")
+
+
+def _as_naive_utc(value: datetime) -> datetime:
+    if value.tzinfo is None:
+        return value
+    return value.astimezone().replace(tzinfo=None)
+
+
+def _order_year_month(value: str) -> str:
+    return _parse_order_date(value).strftime("%Y-%m")
+
+
+def _order_date_order_id(value: str, order_id: int) -> str:
+    return f"{_parse_order_date(value).isoformat()}#{order_id:020d}"
+
+
 class OrderRepositoryImpl(OrderRepository):
     def __init__(self, dynamodb_service: DynamoDBService, table_name: str = "orders"):
         self.dynamodb_service = dynamodb_service
         self.table_name = table_name
-    
-    def create(self, entity: Order) -> Order:
 
+    def create(self, entity: Order) -> Order:
         try:
-            item = entity.model_dump()
+            item = self._prepare_item(entity)
             self.dynamodb_service.put_item(item, self.table_name)
             return entity
-            
+
         except Exception as e:
             logger.error(f"Erro ao criar pedido: {str(e)}")
             raise
-    
+
     def get_by_id(self, entity_id: int) -> Optional[Order]:
-        
         try:
-            key = {"order_id": entity_id}
-            item = self.dynamodb_service.get_item(key, self.table_name)            
+            item = self.dynamodb_service.get_item({"order_id": entity_id}, self.table_name)
             if item:
                 return Order(**item)
             return None
-            
+
         except Exception as e:
             logger.error(f"Erro ao buscar pedido por ID {entity_id}: {str(e)}")
             raise
-    
+
     def find_by_id(self, entity_id: Union[str, uuid.UUID]) -> Optional[Order]:
-        """
-        Busca pedido por ID, aceitando tanto string quanto UUID.
-        Implementa o método abstrato definido na classe base BaseRepository.
-        Nota: Como Order usa int como ID, converte string/UUID para int.
-        """
         try:
-            # Converte para string primeiro, depois para int
             if isinstance(entity_id, uuid.UUID):
-                # Se for UUID, converte para string e depois tenta extrair um int
-                # Isso pode não ser ideal - talvez precise de uma lógica específica
                 id_str = str(entity_id)
-                # Por enquanto, vamos tentar usar os primeiros dígitos como int
-                # Isso é uma solução temporária - talvez precise ajustar conforme a lógica de negócio
-                id_int = int(id_str.replace('-', '')[:10])  # Pega os primeiros 10 dígitos
+                id_int = int(id_str.replace("-", "")[:10])
             else:
-                # Se for string, tenta converter para int
                 id_int = int(str(entity_id))
-            
-            # Reutiliza a lógica existente do get_by_id
+
             return self.get_by_id(id_int)
-            
+
         except (ValueError, TypeError) as e:
             logger.error(f"Erro ao converter ID {entity_id} para int: {str(e)}")
             return None
         except Exception as e:
             logger.error(f"Erro ao buscar pedido por ID {entity_id}: {str(e)}")
             raise
-    
+
     def get_all(self) -> List[Order]:
-        
         try:
             items = self.dynamodb_service.scan_table(self.table_name)
-            orders = []
-            
-            for item in items:
-                orders.append(Order(**item))
-            
-            return orders
-            
+            return [Order(**item) for item in items]
+
         except Exception as e:
             logger.error(f"Erro ao buscar todos os pedidos: {str(e)}")
             raise
-    
+
     def update(self, entity_id: int, entity: Order) -> Optional[Order]:
-        
         try:
             if not self.exists(entity_id):
                 return None
-            
-            update_data = entity.model_dump()
-            
-            if 'id' in update_data:
-                del update_data['id']
-            
-            # Constrói a expressão de atualização
+
+            update_data = self._prepare_item(entity)
+            update_data.pop("order_id", None)
+
             update_expression = "SET "
             expression_values = {}
-            
+            expression_names = {}
+
             for key, value in update_data.items():
                 if value is not None:
                     update_expression += f"#{key} = :{key}, "
                     expression_values[f":{key}"] = value
-            
-            # Remove a vírgula extra no final
+                    expression_names[f"#{key}"] = key
+
             update_expression = update_expression.rstrip(", ")
-            
-            # Adiciona os nomes dos atributos
-            expression_names = {f"#{key}": key for key in update_data.keys() if update_data[key] is not None}
-            
-            # Atualiza o item
-            key = {"order_id": entity_id}
+
             response = self.dynamodb_service.update_item(
-                key,
+                {"order_id": entity_id},
                 update_expression,
                 expression_values,
-                self.table_name
+                self.table_name,
+                expression_attribute_names=expression_names,
             )
-            
-            if 'Attributes' in response:
-                return Order(**response['Attributes'])
+
+            if "Attributes" in response:
+                result_dict = self.dynamodb_service._convert_from_dynamodb_format(response["Attributes"])
+                return Order(**result_dict)
             return None
-            
+
         except Exception as e:
             logger.error(f"Erro ao atualizar pedido {entity_id}: {str(e)}")
             raise
-    
+
     def delete(self, entity_id: int) -> bool:
-        
         try:
-            key = {"order_id": entity_id}
-            self.dynamodb_service.delete_item(key, self.table_name)
+            self.dynamodb_service.delete_item({"order_id": entity_id}, self.table_name)
             return True
-            
+
         except Exception as e:
             logger.error(f"Erro ao remover pedido {entity_id}: {str(e)}")
             return False
-    
+
     def exists(self, entity_id: int) -> bool:
-        
         try:
-            key = {"order_id": entity_id}
-            item = self.dynamodb_service.get_item(key, self.table_name)
-            return item is not None
-            
+            return self.get_by_id(entity_id) is not None
+
         except Exception as e:
             logger.error(f"Erro ao verificar existência do pedido {entity_id}: {str(e)}")
             return False
-    
+
     def get_by_order_id(self, order_id: int) -> Optional[Order]:
-        
         try:
-            filter_expression = "orderId = :order_id"
-            expression_values = {":order_id": order_id}
-            
-            items = self.dynamodb_service.scan_table(
-                self.table_name, 
-                filter_expression, 
-                expression_values
-            )
-            
-            if items:
-                return Order(**items[0])
-            return None
-            
+            return self.get_by_id(order_id)
+
         except Exception as e:
             logger.error(f"Erro ao buscar pedido por order_id {order_id}: {str(e)}")
             raise
-    
+
     def get_by_participant_email(self, email: str) -> List[Order]:
-        
         try:
-            filter_expression = "participantEmail = :email"
-            expression_values = {":email": email}
-            
-            items = self.dynamodb_service.scan_table(
-                self.table_name, 
-                filter_expression, 
-                expression_values
+            items = self.dynamodb_service.query_table(
+                self.table_name,
+                "participant_email = :email",
+                {":email": _normalize_email(email)},
+                index_name="orders_by_email_idx",
+                scan_index_forward=False,
             )
-            
-            orders = []
-            for item in items:
-                orders.append(Order(**item))
-            
-            return orders
-            
+            return [Order(**item) for item in items]
+
         except Exception as e:
             logger.error(f"Erro ao buscar pedidos por email {email}: {str(e)}")
             raise
-    
+
     def get_by_product_id(self, product_id: int) -> List[Order]:
-        
         try:
-            filter_expression = "productId = :product_id"
-            expression_values = {":product_id": product_id}
-            
-            items = self.dynamodb_service.scan_table(
-                self.table_name, 
-                filter_expression, 
-                expression_values
+            items = self.dynamodb_service.query_table(
+                self.table_name,
+                "product_id = :product_id",
+                {":product_id": product_id},
+                index_name="orders_by_product_idx",
+                scan_index_forward=False,
             )
-            
-            orders = []
-            for item in items:
-                orders.append(Order(**item))
-            
-            return orders
-            
+            return [Order(**item) for item in items]
+
         except Exception as e:
             logger.error(f"Erro ao buscar pedidos por product_id {product_id}: {str(e)}")
             raise
-    
+
     def get_orders_by_date_range(self, start_date: str, end_date: str) -> List[Order]:
-        
         try:
-            filter_expression = "orderDate BETWEEN :start_date AND :end_date"
-            expression_values = {
-                ":start_date": start_date,
-                ":end_date": end_date
-            }
-            
-            items = self.dynamodb_service.scan_table(
-                self.table_name, 
-                filter_expression, 
-                expression_values
-            )
-            
-            orders = []
-            for item in items:
-                orders.append(Order(**item))
-            
-            return orders
-            
+            start_dt = _as_naive_utc(_parse_order_date(start_date))
+            end_dt = _as_naive_utc(_parse_order_date(end_date))
+            if start_dt > end_dt:
+                start_dt, end_dt = end_dt, start_dt
+
+            current_month = datetime(start_dt.year, start_dt.month, 1)
+            final_month = datetime(end_dt.year, end_dt.month, 1)
+            items = []
+
+            while current_month <= final_month:
+                month_key = current_month.strftime("%Y-%m")
+                month_start = max(start_dt, current_month)
+                next_month = (current_month.replace(day=28) + timedelta(days=4)).replace(day=1)
+                month_end_boundary = next_month - timedelta(microseconds=1)
+                month_end = min(end_dt, month_end_boundary)
+
+                month_items = self.dynamodb_service.query_table(
+                    self.table_name,
+                    "order_year_month = :order_year_month AND order_date_order_id BETWEEN :start_range AND :end_range",
+                    {
+                        ":order_year_month": month_key,
+                        ":start_range": f"{month_start.isoformat()}#00000000000000000000",
+                        ":end_range": f"{month_end.isoformat()}#99999999999999999999",
+                    },
+                    index_name="orders_by_month_idx",
+                )
+                items.extend(month_items)
+                current_month = next_month
+
+            return [Order(**item) for item in items]
+
         except Exception as e:
             logger.error(f"Erro ao buscar pedidos por intervalo de datas {start_date} - {end_date}: {str(e)}")
             raise
+
+    def _prepare_item(self, entity: Order) -> dict:
+        item = entity.model_dump()
+        item["participant_email"] = _normalize_email(item["participant_email"])
+        item["order_year_month"] = _order_year_month(item["order_date"])
+        item["order_date_order_id"] = _order_date_order_id(item["order_date"], item["order_id"])
+        return item

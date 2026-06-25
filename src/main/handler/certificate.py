@@ -4,7 +4,13 @@ from src.main.presentation.http_types.create_certificate import CreateCertificat
 from src.main.presentation.http_types.create_certificates import CreateCertificatesRequest
 from src.main.presentation.http_types.fetch_certificate import FetchCertificateRequest, FetchCertificateResponse
 from src.main.presentation.http_types.download_certificate import DownloadCertificateRequest, DownloadCertificateResponse
+from src.main.presentation.http_types.list_user_certificates import (
+    ListUserCertificatesRequest,
+    ListUserCertificatesResponse,
+    UserCertificateItemResponse,
+)
 from src.application.dto.fetch_certificate_dto import FetchCertificateRequestDto
+from src.application.dto.list_user_certificates_dto import ListUserCertificatesRequestDto
 from src.domain.response.build_order import BuildOrderResponse
 from src.domain.response.tech_floripa import TechOrdersResponse
 from src.domain.response.processed_orders import ProcessedOrdersResponse
@@ -13,6 +19,7 @@ from src.application.send_for_build_certificate import SendForBuildCertificate
 from src.application.fetch_order_tech_floripa import FetchOrderTechFloripa
 from src.application.fetch_certificate import FetchCertificate
 from src.application.download_certificate import DownloadCertificate
+from src.application.list_user_certificates import ListUserCertificates
 from src.infrastructure.container.dependency_container import container
 
 
@@ -107,6 +114,39 @@ def download_certificate_handler(request: DownloadCertificateRequest) -> Downloa
     )
 
     return response
+
+
+def list_user_certificates_handler(
+    request: ListUserCertificatesRequest,
+) -> ListUserCertificatesResponse:
+    logger.info(f"Listing certificates for request: {request}")
+
+    application_request = ListUserCertificatesRequestDto(
+        email=request.email,
+        success=request.success,
+    )
+
+    list_user_certificates: ListUserCertificates = container.get("list_user_certificates")
+    application_response = list_user_certificates.execute(application_request)
+
+    return ListUserCertificatesResponse(
+        email=application_response.email,
+        certificates=[
+            UserCertificateItemResponse(
+                id=item.id,
+                order_id=item.order_id,
+                product_id=item.product_id,
+                participant_name=item.participant_name,
+                participant_email=item.participant_email,
+                participant_document=item.participant_document,
+                certificate_url=item.certificate_url,
+                created_at=item.created_at,
+                updated_at=item.updated_at,
+                success=item.success,
+            )
+            for item in application_response.certificates
+        ],
+    )
 
 
 def create_certificates_handler(request: CreateCertificatesRequest) -> BuildOrderResponse:

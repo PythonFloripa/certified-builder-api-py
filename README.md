@@ -141,7 +141,7 @@ Cria múltiplos certificados a partir de uma lista de dados recebida diretamente
 
 Consulta certificados com base em diferentes critérios.
 
-- **Endpoint:** `GET /v1/certificate/fetch`
+- **Endpoint:** `GET /api/v1/certificate/fetch`
 - **Entrada (query parameters):**
   - `order_id` (opcional): ID do pedido.
   - `email` (opcional): Email do participante.
@@ -176,14 +176,62 @@ Consulta certificados com base em diferentes critérios.
   }
   ```
 
+### Listar Certificados de um Usuário
+
+Lista os certificados de um usuário a partir do e-mail informado no path.
+
+- **Endpoint:** `GET /api/v1/users/{email}/certificates`
+- **Entrada (path parameters):**
+  - `email` (obrigatório): e-mail do participante. Suporta URL encoding, por exemplo `user%2Bqa%40example.com`.
+- **Entrada (query parameters):**
+  - `success` (opcional): `true` para retornar apenas certificados gerados com sucesso ou `false` para retornar apenas falhas.
+- **Saída (sucesso):**
+  ```json
+  {
+    "email": "user@example.com",
+    "certificates": [
+      {
+        "id": "string (uuid)",
+        "order_id": 123,
+        "product_id": 456,
+        "participant_name": "string",
+        "participant_email": "string",
+        "participant_document": "string",
+        "certificate_url": "string",
+        "created_at": "2025-01-20T10:30:45",
+        "updated_at": "2025-01-20T10:30:45",
+        "success": true
+      }
+    ]
+  }
+  ```
+- **Comportamento para vazio:**
+  ```json
+  {
+    "email": "user@example.com",
+    "certificates": []
+  }
+  ```
+
 ### Download do Certificado
 
 Gera uma página para download de um certificado.
 
-- **Endpoint:** `GET /v1/certificate/download`
+- **Endpoint:** `GET /api/v1/certificate/download`
 - **Entrada (query parameters):**
   - `id` (obrigatório): UUID do certificado.
 - **Saída (sucesso):**
   - Retorna uma página HTML com o link para download do certificado.
 - **Saída (erro):**
   - Retorna uma página HTML indicando o erro (certificado não encontrado, UUID inválido, etc.).
+
+## Exemplos Locais
+
+- Listar todos os certificados de um e-mail:
+  - `test_list_user_certificates("suzi.harima94@gmail.com")`
+- Listar apenas certificados com sucesso:
+  - `test_list_user_certificates("suzi.harima94@gmail.com", success="true")`
+- Listar apenas certificados com falha:
+  - `test_list_user_certificates("suzi.harima94@gmail.com", success="false")`
+- Testar e-mail com URL encoding:
+  - `test_list_user_certificates("user+qa@example.com")`

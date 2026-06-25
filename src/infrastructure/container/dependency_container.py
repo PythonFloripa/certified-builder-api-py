@@ -50,6 +50,7 @@ class DependencyContainer:
         self._services['send_for_build_certificate'] = self._create_send_for_build_certificate
         self._services['create_certificate'] = self._create_create_certificate
         self._services['fetch_certificate'] = self._create_fetch_certificate
+        self._services['list_user_certificates'] = self._create_list_user_certificates
         self._services['fetch_order_tech_floripa'] = self._create_fetch_order_tech_floripa
         self._services['download_certificate'] = self._create_download_certificate
 
@@ -139,6 +140,12 @@ class DependencyContainer:
         """Cria uma instância do FetchCertificate."""
         from src.application.fetch_certificate import FetchCertificate
         return FetchCertificate()
+
+    def _create_list_user_certificates(self):
+        """Cria uma instância do ListUserCertificates."""
+        from src.application.list_user_certificates import ListUserCertificates
+        certificate_repository = self.get('certificate_repository')
+        return ListUserCertificates(certificate_repository)
 
     def _create_download_certificate(self):
         """Cria uma instância do DownloadCertificate."""
