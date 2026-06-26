@@ -1,5 +1,7 @@
 import logging
 from typing import Annotated, List, Optional
+from urllib.parse import unquote
+
 from aws_lambda_powertools.event_handler.openapi.params import Query
 from aws_lambda_powertools.utilities.parser import parse
 
@@ -12,7 +14,17 @@ from src.main.presentation.http_types.create_certificate import CreateCertificat
 from src.main.presentation.http_types.create_certificates import CreateCertificatesRequest
 from src.main.presentation.http_types.fetch_certificate import FetchCertificateRequest, FetchCertificateResponse
 from src.main.presentation.http_types.download_certificate import DownloadCertificateRequest, DownloadCertificateResponse
-from src.main.handler.certificate import create_certificate_handler, create_certificates_handler, fetch_certificate_handler, download_certificate_handler
+from src.main.presentation.http_types.list_user_certificates import (
+    ListUserCertificatesRequest,
+    ListUserCertificatesResponse,
+)
+from src.main.handler.certificate import (
+    create_certificate_handler,
+    create_certificates_handler,
+    fetch_certificate_handler,
+    download_certificate_handler,
+    list_user_certificates_handler,
+)
 from src.main.presentation.template_loader import template_loader
 from src.domain.response.build_order import BuildOrderResponse
 from src.domain.response.failed import FailedResponse
@@ -148,4 +160,25 @@ def download_certificate(
             status_code=500,
             content_type="text/html",
             body=html_content
+        )
+
+
+@app.get(f"{config.PREFIX_API_VERSION}/users/<email>/certificates")
+def list_user_certificates(
+    email: str,
+    success: Annotated[Optional[bool], Query()] = None,
+) -> ListUserCertificatesResponse:
+    try:
+        request = ListUserCertificatesRequest(
+            email=unquote(email),
+            success=success,
+        )
+        response = list_user_certificates_handler(request)
+        return response
+    except Exception as e:
+        logger.error(f"Erro ao listar certificados do usuário: {e}")
+        return FailedResponse(
+            details=str(e),
+            message="Internal Server Error",
+            status=500
         )

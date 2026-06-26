@@ -80,7 +80,14 @@ class DynamoDBService:
             logger.error(f"Erro ao buscar item na tabela {table_name}: {str(e)}")
             raise
 
-    def update_item(self, key: Dict, update_expression: str, expression_values: Dict, table_name: str) -> Dict:
+    def update_item(
+        self,
+        key: Dict,
+        update_expression: str,
+        expression_values: Dict,
+        table_name: str,
+        expression_attribute_names: Dict = None,
+    ) -> Dict:
         """
         Atualiza um item na tabela DynamoDB.
         
@@ -99,13 +106,16 @@ class DynamoDBService:
             expression_values = self._convert_to_dynamodb_format(expression_values)
             
             logger.info(f"Atualizando item na tabela {table_name} com chave: {key}")
-            response = self.aws.update_item(
+            update_kwargs = dict(
                 TableName=self.build_table_name(table_name),
                 Key=dynamodb_key,
                 UpdateExpression=update_expression,
                 ExpressionAttributeValues=expression_values,
-                ReturnValues="ALL_NEW"
             )
+            if expression_attribute_names:
+                update_kwargs["ExpressionAttributeNames"] = expression_attribute_names
+            update_kwargs["ReturnValues"] = "ALL_NEW"
+            response = self.aws.update_item(**update_kwargs)
             logger.info(f"Item atualizado com sucesso: {response}")
             return response
         except ClientError as e:
@@ -159,12 +169,18 @@ class DynamoDBService:
                 scan_kwargs['ExpressionAttributeValues'] = expression_values
             
             logger.info(f"Escaneando tabela {table_name}")
-            response = self.aws.scan(**scan_kwargs)
-            
             items = []
-            if 'Items' in response:
-                for item in response['Items']:
-                    items.append(self._convert_from_dynamodb_format(item))
+            while True:
+                response = self.aws.scan(**scan_kwargs)
+
+                if 'Items' in response:
+                    for item in response['Items']:
+                        items.append(self._convert_from_dynamodb_format(item))
+
+                if 'LastEvaluatedKey' not in response:
+                    break
+
+                scan_kwargs['ExclusiveStartKey'] = response['LastEvaluatedKey']
             
             logger.info(f"Encontrados {len(items)} itens na tabela {table_name}")
             return items
@@ -173,7 +189,16 @@ class DynamoDBService:
             logger.error(f"Erro ao escanear tabela {table_name}: {str(e)}")
             raise
 
-    def query_table(self, table_name: str, key_condition_expression: str, expression_values: Dict) -> List[Dict]:
+    def query_table(
+        self,
+        table_name: str,
+        key_condition_expression: str,
+        expression_values: Dict,
+        index_name: str = None,
+        filter_expression: str = None,
+        expression_attribute_names: Dict = None,
+        scan_index_forward: bool = True,
+    ) -> List[Dict]:
         """
         Consulta uma tabela DynamoDB.
         
@@ -186,19 +211,35 @@ class DynamoDBService:
             List[Dict]: Lista de itens encontrados
         """
         try:
-            expression_values = self._convert_to_dynamodb_format(expression_values)
-            
+            query_kwargs = {
+                "TableName": self.build_table_name(table_name),
+                "KeyConditionExpression": key_condition_expression,
+                "ExpressionAttributeValues": self._convert_to_dynamodb_format(expression_values),
+                "ScanIndexForward": scan_index_forward,
+            }
+
+            if index_name:
+                query_kwargs['IndexName'] = index_name
+
+            if filter_expression:
+                query_kwargs['FilterExpression'] = filter_expression
+
+            if expression_attribute_names:
+                query_kwargs['ExpressionAttributeNames'] = expression_attribute_names
+
             logger.info(f"Consultando tabela {table_name} com expressão: {key_condition_expression}")
-            response = self.aws.query(
-                TableName=self.build_table_name(table_name),
-                KeyConditionExpression=key_condition_expression,
-                ExpressionAttributeValues=expression_values
-            )
-            
             items = []
-            if 'Items' in response:
-                for item in response['Items']:
-                    items.append(self._convert_from_dynamodb_format(item))
+            while True:
+                response = self.aws.query(**query_kwargs)
+
+                if 'Items' in response:
+                    for item in response['Items']:
+                        items.append(self._convert_from_dynamodb_format(item))
+
+                if 'LastEvaluatedKey' not in response:
+                    break
+
+                query_kwargs['ExclusiveStartKey'] = response['LastEvaluatedKey']
             
             logger.info(f"Encontrados {len(items)} itens na consulta")
             return items
@@ -315,4 +356,3 @@ class DynamoDBService:
             Dict: Informações das tabelas (nome e ARN)
         """
         return self.config.dynamodb_tables
-

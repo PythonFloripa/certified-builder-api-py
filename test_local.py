@@ -9,7 +9,13 @@ import json
 from lambda_function import lambda_handler
 
 
-def create_api_gateway_event(method: str, path: str, body: dict = None, query_string_parameters: dict = None) -> dict:
+def create_api_gateway_event(
+    method: str,
+    path: str,
+    body: dict = None,
+    query_string_parameters: dict = None,
+    path_parameters: dict = None,
+) -> dict:
     """
     Cria um evento simulado do API Gateway REST.
     
@@ -24,7 +30,7 @@ def create_api_gateway_event(method: str, path: str, body: dict = None, query_st
     return {
         "httpMethod": method,
         "path": path,
-        "pathParameters": None,
+        "pathParameters": path_parameters,
         "queryStringParameters": query_string_parameters,
         "headers": {
             "Content-Type": "application/json",
@@ -108,6 +114,51 @@ def test_create_certificate():
     except Exception as e:
         print(f"Erro durante o teste: {e}")
         return None
+
+
+def test_list_user_certificates(email: str, success: str = None):
+    """Testa o endpoint de listagem de certificados por email."""
+    print("🧪 Testando endpoint de listagem de certificados por email...")
+
+    encoded_email = email.replace("@", "%40").replace("+", "%2B")
+    path = f"/api/v1/users/{encoded_email}/certificates"
+    query_params = {"success": success} if success is not None else None
+
+    event = create_api_gateway_event(
+        method="GET",
+        path=path,
+        query_string_parameters=query_params,
+        path_parameters={"email": encoded_email},
+    )
+
+    context = MockLambdaContext()
+
+    try:
+        print(f"Enviando requisição: path={path} query={query_params}")
+        response = lambda_handler(event, context)
+        print("Resposta recebida:")
+        print(f"Status Code: {response.get('statusCode', 'N/A')}")
+
+        body = response.get('body', {})
+        if isinstance(body, str):
+            try:
+                body = json.loads(body)
+            except json.JSONDecodeError:
+                pass
+
+        print(f"   Body: {json.dumps(body, indent=2, ensure_ascii=False)}")
+
+        status_code = response.get('statusCode', 500)
+        if 200 <= status_code < 300:
+            print("Teste executado com sucesso!")
+        else:
+            print("Teste falhou!")
+
+        return response
+    except Exception as e:
+        print(f"Erro durante o teste: {e}")
+        return None
+
 
 def test_fetch_certificate_by_order_id():
     """Testa o endpoint de busca de certificados."""
@@ -318,6 +369,9 @@ def test_fetch_certificate_by_email_and_product_id():
 if __name__ == "__main__":
     # Executa os testes
     # test_create_certificate()
+    # test_list_user_certificates("suzi.harima94@gmail.com")
+    # test_list_user_certificates("suzi.harima94@gmail.com", success="true")
+    # test_list_user_certificates("suzi.harima94@gmail.com", success="false")
     test_fetch_certificate_by_order_id()
     test_fetch_certificate_by_product_id()
     test_fetch_certificate_by_email()
